@@ -27,7 +27,10 @@
 	</properties>
 
 	<modules>
+		<module>common-media-core</module>
 		<module>common-media-rtsp</module>
+		<module>common-media-player</module>
+		<module>common-media-mfsdk</module>
 	</modules>
 
 	<build>
