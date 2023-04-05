@@ -16,6 +16,11 @@
 			<artifactId>common-core</artifactId>
 			<version>${revision}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.glasspath.common</groupId>
+			<artifactId>common-media-codec</artifactId>
+			<version>${revision}</version>
+		</dependency>
 
 	</dependencies>
 

@@ -24,6 +24,8 @@ package org.glasspath.common.media.rtsp;
 
 import java.nio.ByteBuffer;
 
+import org.glasspath.common.media.h264.H264NalUnit;
+
 public class RtpPacket {
 
 	public static enum NalUnitType {

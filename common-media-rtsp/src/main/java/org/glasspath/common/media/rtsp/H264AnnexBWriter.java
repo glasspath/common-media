@@ -25,6 +25,8 @@ package org.glasspath.common.media.rtsp;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.glasspath.common.media.h264.H264NalUnit;
+
 public class H264AnnexBWriter {
 
 	private OutputStream outputStream = null;

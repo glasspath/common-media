@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package org.glasspath.common.media.rtsp;
+package org.glasspath.common.media.h264;
 
 public class H264NalUnit {
 
