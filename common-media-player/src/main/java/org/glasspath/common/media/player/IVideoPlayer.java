@@ -22,11 +22,15 @@
  */
 package org.glasspath.common.media.player;
 
+import java.util.prefs.Preferences;
+
 import javax.swing.JFrame;
 
 public interface IVideoPlayer {
 
 	public JFrame getFrame();
+
+	public Preferences getPreferences();
 
 	public void fireVideoOpened(String path);
 

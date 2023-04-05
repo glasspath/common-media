@@ -322,13 +322,14 @@ public abstract class VideoPlayer implements IVideoPlayer {
 		}
 	}
 
-	public Preferences getPreferences() {
-		return preferences;
-	}
-
 	@Override
 	public JFrame getFrame() {
 		return frame;
+	}
+
+	@Override
+	public Preferences getPreferences() {
+		return preferences;
 	}
 
 	public ControlsBar getControlsBar() {
