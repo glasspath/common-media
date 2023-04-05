@@ -68,10 +68,9 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 
 	protected final IVideoPlayer context;
 	protected final Video video;
-
+	private final KeyEventDispatcher keyListener;
 	private long playerInstance = -1;
 	private PlayerState playerState = PlayerState.PLAYER_STOPPED;
-
 	private boolean repeatEnabled = false;
 	private int frameInterval = 333333; // TODO
 	private long duration = 0;
@@ -94,10 +93,9 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 		this.context = context;
 		this.video = video;
 
-		setBorder(BorderFactory.createEmptyBorder());
+		keyListener = new KeyEventDispatcher() {
 
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
-
+			@Override
 			public boolean dispatchKeyEvent(KeyEvent e) {
 
 				if (context.getFrame().isActive() && e.getID() == KeyEvent.KEY_PRESSED) {
@@ -140,7 +138,11 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 				return false;
 
 			}
-		});
+		};
+
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(keyListener);
+
+		setBorder(BorderFactory.createEmptyBorder());
 
 		if (context.getFrame() != null) {
 
@@ -604,6 +606,7 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 
 	@Override
 	public void exit() {
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(keyListener);
 		stopPlayer();
 	}
 
