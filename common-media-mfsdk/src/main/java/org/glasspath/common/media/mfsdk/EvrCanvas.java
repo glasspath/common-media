@@ -29,7 +29,7 @@ import java.awt.Graphics;
 public class EvrCanvas extends Canvas {
 
 	static {
-		if (!MFUtils.isNativelibraryloaded()) {
+		if (!MFUtils.isNativeLibraryLoaded()) {
 			System.err.println("EvrCanvas: mfsdk lib is not loaded..");
 		}
 	}

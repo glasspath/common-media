@@ -52,7 +52,7 @@ public class MFUtils {
 
 	}
 
-	public static boolean isNativelibraryloaded() {
+	public static boolean isNativeLibraryLoaded() {
 		return nativeLibraryLoaded;
 	}
 

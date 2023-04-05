@@ -28,7 +28,7 @@ import java.awt.image.DataBufferByte;
 public class FrameGenerator {
 
 	static {
-		if (!MFUtils.isNativelibraryloaded()) {
+		if (!MFUtils.isNativeLibraryLoaded()) {
 			System.err.println("EvrCanvas: mfsdk lib is not loaded..");
 		}
 	}
