@@ -20,43 +20,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package org.glasspath.common.media.h264;
+package org.glasspath.common.media.rtsp;
 
-public class H264NalUnit {
+import org.glasspath.common.media.h264.H264NalUnit;
 
-	public static final byte[] NAL_START_PREFIX_CODE = {
-			(byte) 0x00,
-			(byte) 0x00,
-			(byte) 0x00,
-			(byte) 0x01
-	};
+public interface RtspStreamListener {
 
-	public final byte[] bytes;
-	public final int nalUnitType;
-	public final long timestamp;
-	public final long receivedAt;
+	public void parameterSetsUpdated(H264ParameterSets parameterSets);
 
-	public H264NalUnit(byte[] bytes, int nalUnitType, long timestamp, long receivedAt) {
-		this.bytes = bytes;
-		this.nalUnitType = nalUnitType;
-		this.timestamp = timestamp;
-		this.receivedAt = receivedAt;
-	}
+	public void nalUnitReceived(H264NalUnit nalUnit);
 
-	public boolean isFrame() {
-		return nalUnitType == 1 || nalUnitType == 97 || nalUnitType == 101; // TODO
-	}
-
-	public boolean isSequenceParameterSet() {
-		return nalUnitType == 7; // TODO
-	}
-
-	public boolean isPictureParameterSet() {
-		return nalUnitType == 8; // TODO
-	}
-
-	public boolean isIFrame() {
-		return nalUnitType == 101; // TODO
-	}
+	public void recordingStateChanged(boolean recording, String path);
 
 }
