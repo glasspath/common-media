@@ -34,10 +34,12 @@ public abstract class H264NalUnitRecorder {
 
 	private String name = "H264NalUnitRecorder";
 	private int timeScale = 100000;
+	private boolean ptsCorrectionEnabled = false;
+	private long ptsOffset = 0;
 	private String path = null;
 	private boolean recording = false;
 	private H264NalUnit nalUnit = null;
-	private long ptsOffset = 0;
+	private long ptsCorrection = 0;
 
 	public H264NalUnitRecorder() {
 
@@ -59,13 +61,29 @@ public abstract class H264NalUnitRecorder {
 		this.timeScale = timeScale;
 	}
 
+	public boolean isPtsCorrectionEnabled() {
+		return ptsCorrectionEnabled;
+	}
+
+	public void setPtsCorrectionEnabled(boolean ptsCorrectionEnabled) {
+		this.ptsCorrectionEnabled = ptsCorrectionEnabled;
+	}
+
+	public long getPtsOffset() {
+		return ptsOffset;
+	}
+
+	public void setPtsOffset(long ptsOffset) {
+		this.ptsOffset = ptsOffset;
+	}
+
 	public String getPath() {
 		return path;
 	}
 
 	protected abstract String getNextPath(long timestamp);
 
-	protected abstract boolean createFile(String recordPath, Resolution resolution, H264ParameterSets parameterSets, long created);
+	protected abstract boolean createFile(String recordPath, Resolution resolution, H264ParameterSets parameterSets, long pts, long created);
 
 	protected abstract void fileCreated(String filePath);
 
@@ -99,11 +117,18 @@ public abstract class H264NalUnitRecorder {
 								// Get the path of the file to record to, use the time-stamp of the NalUnit because it might have been buffered for a while
 								path = getNextPath(nalUnit.receivedAt);
 
-								if (createFile(path, getResolution(), parameterSets, nalUnit.receivedAt)) {
+								if (ptsCorrectionEnabled) {
+									ptsCorrection = nalUnit.timestamp;
+								} else {
+									ptsCorrection = 0;
+								}
+
+								long pts = (nalUnit.timestamp - ptsCorrection) + ptsOffset;
+
+								if (createFile(path, getResolution(), parameterSets, pts, nalUnit.receivedAt)) {
 
 									fileCreated(path);
 
-									ptsOffset = nalUnit.timestamp;
 									recording = true;
 
 								} else if (TODO_DEBUG) {
@@ -116,7 +141,7 @@ public abstract class H264NalUnitRecorder {
 
 						if (recording) {
 
-							long pts = nalUnit.timestamp - ptsOffset;
+							long pts = (nalUnit.timestamp - ptsCorrection) + ptsOffset;
 							long duration = nextNalUnit.timestamp - nalUnit.timestamp;
 
 							writeNalUnit(nalUnit, pts, duration);
@@ -163,7 +188,7 @@ public abstract class H264NalUnitRecorder {
 
 		path = null;
 		recording = false;
-		ptsOffset = 0;
+		ptsCorrection = 0;
 
 		if (reset) {
 			nalUnit = null;

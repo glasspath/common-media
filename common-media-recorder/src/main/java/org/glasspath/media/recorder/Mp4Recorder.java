@@ -56,7 +56,7 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder {
 	}
 
 	@Override
-	protected boolean createFile(String recordPath, Resolution resolution, H264ParameterSets parameterSets, long created) {
+	protected boolean createFile(String recordPath, Resolution resolution, H264ParameterSets parameterSets, long pts, long created) {
 
 		try {
 
@@ -78,14 +78,13 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder {
 
 			if (videoTrack != null && parameterSets != null && parameterSets.sequenceParameterSet != null && parameterSets.pictureParameterSet != null) {
 
-				// Time-stamp (pts) of SPS and PPS are set to 0 because time-stamps start at 0
-				Packet frame = nextFrame(parameterSets.sequenceParameterSet, 0, 0);
+				Packet frame = nextFrame(parameterSets.sequenceParameterSet, pts, 0);
 				if (frame != null) {
 
 					videoTrack.addFrame(frame);
 					bytesWritten += frame.data.limit();
 
-					frame = nextFrame(parameterSets.pictureParameterSet, 0, 0);
+					frame = nextFrame(parameterSets.pictureParameterSet, pts, 0);
 					if (frame != null) {
 
 						videoTrack.addFrame(frame);
