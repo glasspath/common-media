@@ -51,8 +51,8 @@ public class FFFrameLoader extends FrameLoader {
 
 		frameGrabber = new FFmpegFrameGrabber(video.getPath());
 
-		final int cores = Runtime.getRuntime().availableProcessors(); // Includes hyper threading cores
-		final int threads = cores + 1;
+		int cores = Runtime.getRuntime().availableProcessors(); // Includes hyper threading cores
+		int threads = cores + 1;
 		frameGrabber.setVideoOption("threads", "" + threads);
 
 		try {
@@ -130,7 +130,7 @@ public class FFFrameLoader extends FrameLoader {
 
 					while (!callback.isCanceled()) { // TODO?
 
-						final org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
+						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
 
 						if (frame == null) {
 							break;
