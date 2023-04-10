@@ -76,6 +76,8 @@ import org.glasspath.common.swing.frame.FrameUtils;
 @SuppressWarnings("serial")
 public abstract class VideoPlayer implements IVideoPlayer {
 
+	public static boolean TODO_TEST_GLASS_MODE = false;
+
 	public static final int STEP_FAST_FORWARD_REVERSE = 20;
 	public static final Color CONTROLS_BAR_BG_COLOR = new Color(30, 30, 30);
 	public static final Color CONTROLS_BAR_FG_COLOR = new Color(180, 180, 180);
@@ -155,7 +157,14 @@ public abstract class VideoPlayer implements IVideoPlayer {
 					});
 
 					IVideoPlayerPanel videoPlayerPanel = createVideoPlayerPanel(VideoPlayer.this, video);
-					frame.getContentPane().add(videoPlayerPanel.getComponent(), BorderLayout.CENTER);
+					if (TODO_TEST_GLASS_MODE) {
+
+						frame.setGlassPane(videoPlayerPanel.getComponent());
+						frame.getGlassPane().setVisible(true);
+
+					} else {
+						frame.getContentPane().add(videoPlayerPanel.getComponent(), BorderLayout.CENTER);
+					}
 					VideoPlayer.this.videoPlayerPanel = videoPlayerPanel;
 					initVideoPlayerPanel();
 
@@ -176,6 +185,9 @@ public abstract class VideoPlayer implements IVideoPlayer {
 				exit();
 			}
 		});
+
+		// TODO
+		// frame.getRootPane().setBackground(CONTROLS_BAR_BG_COLOR);
 
 		FrameUtils.loadFrameDimensions(frame, preferences, false);
 
