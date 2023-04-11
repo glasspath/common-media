@@ -22,7 +22,12 @@
  */
 package org.glasspath.common.media.rtsp;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
+
+import org.glasspath.common.media.rtsp.RtspResponseParser.Authentication;
+import org.glasspath.common.media.rtsp.RtspResponseParser.DigestAuthentication;
 
 public class RtspRequestBuilder {
 
@@ -53,14 +58,22 @@ public class RtspRequestBuilder {
 
 	private final RtspUrl rtspUrl;
 	private final StringBuilder request = new StringBuilder();
+	private String requestMethod = "";
+	private String requestUri = "";
 
 	public RtspRequestBuilder(RtspUrl rtspUrl) {
 		this.rtspUrl = rtspUrl;
 	}
 
 	public RtspRequestBuilder begin(RtspRequest rtspRequest) {
-		request.append(rtspRequest.getText() + " rtsp://" + rtspUrl.getHost() + ":" + rtspUrl.getPort() + "/" + rtspUrl.getMovie() + " RTSP/1.0" + CRLF);
+
+		requestMethod = rtspRequest.getText();
+		requestUri = "rtsp://" + rtspUrl.getHost() + ":" + rtspUrl.getPort() + "/" + rtspUrl.getMovie();
+
+		request.append(requestMethod + " " + requestUri + " RTSP/1.0" + CRLF);
+
 		return this;
+
 	}
 
 	public RtspRequestBuilder begin(RtspRequest rtspRequest, String stream) {
@@ -68,12 +81,19 @@ public class RtspRequestBuilder {
 	}
 
 	public RtspRequestBuilder begin(RtspRequest rtspRequest, String url, boolean appendUrl) {
+
+		requestMethod = rtspRequest.getText();
+
 		if (appendUrl) {
-			request.append(rtspRequest.getText() + " rtsp://" + rtspUrl.getHost() + ":" + rtspUrl.getPort() + "/" + rtspUrl.getMovie() + "/" + url + " RTSP/1.0" + CRLF);
+			requestUri = "rtsp://" + rtspUrl.getHost() + ":" + rtspUrl.getPort() + "/" + rtspUrl.getMovie() + "/" + url;
 		} else {
-			request.append(rtspRequest.getText() + " " + url + " RTSP/1.0" + CRLF);
+			requestUri = url;
 		}
+
+		request.append(requestMethod + " " + requestUri + " RTSP/1.0" + CRLF);
+
 		return this;
+
 	}
 
 	public RtspRequestBuilder appendCSeq(int cSeq) {
@@ -86,11 +106,66 @@ public class RtspRequestBuilder {
 		return this;
 	}
 
-	public RtspRequestBuilder appendBasicAuthentication() {
+	public RtspRequestBuilder appendAuthorization(Authentication authentication) {
+
+		// TODO? For now we start with basic authorization by default
 		if (rtspUrl.getUsername() != null && rtspUrl.getPassword() != null) {
-			request.append("Authorization: Basic " + new String(Base64.getEncoder().encode((rtspUrl.getUsername() + ":" + rtspUrl.getPassword()).getBytes())) + CRLF);
+
+			if (authentication instanceof DigestAuthentication) {
+
+				DigestAuthentication auth = (DigestAuthentication) authentication;
+
+				if (auth.nonce != null) {
+
+					String authHeader = "username=\"" + rtspUrl.getUsername() + "\"";
+
+					if (auth.realm != null) {
+						authHeader += ", realm=\"" + auth.realm + "\"";
+					}
+
+					authHeader += ", algorithm=\"MD5\"";
+					authHeader += ", nonce=\"" + auth.nonce + "\"";
+					authHeader += ", uri=\"" + requestUri + "\"";
+
+					String response = "";
+
+					try {
+
+						// https://en.wikipedia.org/wiki/Digest_access_authentication
+
+						MessageDigest massageDigest = MessageDigest.getInstance("MD5");
+
+						String ha1Source = rtspUrl.getUsername() + ":" + auth.realm + ":" + rtspUrl.getPassword();
+						String ha1 = bytesToHex(massageDigest.digest(ha1Source.getBytes(StandardCharsets.UTF_8))).toLowerCase();
+
+						String ha2Source = requestMethod + ":" + requestUri;
+						String ha2 = bytesToHex(massageDigest.digest(ha2Source.getBytes(StandardCharsets.UTF_8))).toLowerCase();
+
+						String responseSource = ha1 + ":" + auth.nonce + ":" + ha2;
+						response = bytesToHex(massageDigest.digest(responseSource.getBytes(StandardCharsets.UTF_8))).toLowerCase();
+
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+					authHeader += ", response=\"" + response + "\"";
+
+					if (auth.opaque != null) {
+						authHeader += ", opaque=\"" + auth.opaque + "\"";
+					}
+
+					request.append("Authorization: Digest " + authHeader + CRLF);
+
+				}
+
+			} else {
+				request.append("Authorization: Basic " + new String(Base64.getEncoder().encode((rtspUrl.getUsername() + ":" + rtspUrl.getPassword()).getBytes())) + CRLF);
+			}
+
 		}
+
 		return this;
+
 	}
 
 	public RtspRequestBuilder appendSession(String session) {
@@ -117,6 +192,20 @@ public class RtspRequestBuilder {
 
 	public String getRequest() {
 		return request.toString();
+	}
+
+	// TODO
+	// https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
+	private static final byte[] HEX_ARRAY = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
+
+	public static String bytesToHex(byte[] bytes) {
+		byte[] hexChars = new byte[bytes.length * 2];
+		for (int j = 0; j < bytes.length; j++) {
+			int v = bytes[j] & 0xFF;
+			hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+			hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+		}
+		return new String(hexChars, StandardCharsets.UTF_8);
 	}
 
 }

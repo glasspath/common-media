@@ -29,19 +29,18 @@ import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.glasspath.common.Common;
 import org.glasspath.common.media.rtsp.RtspDescribeResponseParser.AudioTrackInfo;
 import org.glasspath.common.media.rtsp.RtspDescribeResponseParser.TrackInfo;
 import org.glasspath.common.media.rtsp.RtspDescribeResponseParser.VideoTrackInfo;
 import org.glasspath.common.media.rtsp.RtspRequestBuilder.RtspRequest;
+import org.glasspath.common.media.rtsp.RtspResponseParser.Authentication;
 
 public class RtspClient {
 
-	public static boolean TODO_DEBUG = false;
-	
+	public static boolean TODO_DEBUG = true;
+
 	public static final String USER_AGENT = "Lavf58.29.100";
 	public static int CONNECT_TIMEOUT = 2000;
 
@@ -53,11 +52,11 @@ public class RtspClient {
 	private RtspStreamReader streamReader = null;
 	private RtspResponseParser rtspResponseParser = null;
 	private int cSeq = 0;
+	private Authentication authentication = null;
 	private String session = null;
 	private String[] options = null;
 	private VideoTrackInfo videoTrackInfo = null;
 	private AudioTrackInfo audioTrackInfo = null;
-	private List<RtspInterleavedFrame> frames = new ArrayList<>();
 
 	public RtspClient() {
 
@@ -124,9 +123,9 @@ public class RtspClient {
 					System.out.println(message);
 				}
 
-				RtspResponseParser parser = getRtspResponseParser();
-				if (parser != null) {
-					parser.parseMessage(message);
+				RtspResponseParser responseParser = rtspResponseParser;
+				if (responseParser != null) {
+					responseParser.parseMessage(message);
 				}
 
 				return true;
@@ -135,10 +134,6 @@ public class RtspClient {
 
 			@Override
 			public boolean rtspInterleavedFrameReceived(RtspInterleavedFrame rtspInterleavedFrame) {
-
-				if (frames.size() < 100) {
-					frames.add(rtspInterleavedFrame);
-				}
 
 				rtpPacketReceived(rtspInterleavedFrame.getRtpPacket());
 
@@ -204,49 +199,34 @@ public class RtspClient {
 		return disconnected;
 	}
 
-	private synchronized RtspResponseParser getRtspResponseParser() {
-		return rtspResponseParser;
-	}
-
-	private synchronized void setRtspResponseParser(RtspResponseParser rtspResponseParser) {
-		this.rtspResponseParser = rtspResponseParser;
-	}
-
-	private void waitForRtspResponseParserCompletion(RtspResponseParser parser) {
-		setRtspResponseParser(parser);
-		parser.waitForCompletion();
-		setRtspResponseParser(null);
-	}
-
-	private void updateSession(RtspResponseParser parser) {
-		if (session == null && parser.getSession() != null) {
-			session = parser.getSession();
-		}
-	}
-
-	public void sendOptionsRequest() {
+	public int sendOptionsRequest() {
 
 		if (rtspUrl != null) {
 
 			// TODO?
+			authentication = null;
 			session = null;
 
-			write(new RtspRequestBuilder(rtspUrl)
+			String request = new RtspRequestBuilder(rtspUrl)
 					.begin(RtspRequest.OPTIONS)
 					.appendCSeq(++cSeq)
 					.appendUserAgent(USER_AGENT)
-					.appendBasicAuthentication()
+					.appendAuthorization(authentication)
 					.appendSession(session)
 					.end()
-					.getRequest());
+					.getRequest();
 
-			RtspOptionsResponseParser parser = new RtspOptionsResponseParser();
-			waitForRtspResponseParserCompletion(parser);
+			RtspOptionsResponseParser responseParser = new RtspOptionsResponseParser();
 
-			updateSession(parser);
-			options = parser.getOptions();
+			sendRequest(request, responseParser);
+
+			options = responseParser.getOptions();
+
+			return responseParser.getReplyCode();
 
 		}
+
+		return 0;
 
 	}
 
@@ -254,28 +234,36 @@ public class RtspClient {
 		return options;
 	}
 
-	public void sendDescribeRequest() {
+	public int sendDescribeRequest() {
 
 		if (rtspUrl != null) {
 
-			write(new RtspRequestBuilder(rtspUrl)
+			String request = new RtspRequestBuilder(rtspUrl)
 					.begin(RtspRequest.DESCRIBE)
 					.appendCSeq(++cSeq)
 					.appendUserAgent(USER_AGENT)
-					.appendBasicAuthentication()
+					.appendAuthorization(authentication)
 					.appendSession(session)
 					.end()
-					.getRequest());
+					.getRequest();
 
-			RtspDescribeResponseParser parser = new RtspDescribeResponseParser();
-			waitForRtspResponseParserCompletion(parser);
+			RtspDescribeResponseParser responseParser = new RtspDescribeResponseParser();
 
-			updateSession(parser);
-			videoTrackInfo = parser.getVideoTrackInfo();
-			audioTrackInfo = parser.getAudioTrackInfo();
+			sendRequest(request, responseParser);
+
+			videoTrackInfo = responseParser.getVideoTrackInfo();
+			audioTrackInfo = responseParser.getAudioTrackInfo();
+
+			return responseParser.getReplyCode();
 
 		}
 
+		return 0;
+
+	}
+
+	public Authentication getAuthentication() {
+		return authentication;
 	}
 
 	public VideoTrackInfo getVideoTrackInfo() {
@@ -286,7 +274,7 @@ public class RtspClient {
 		return audioTrackInfo;
 	}
 
-	public void sendSetupRequest(TrackInfo trackInfo, String transport) {
+	public int sendSetupRequest(TrackInfo trackInfo, String transport) {
 
 		if (rtspUrl != null) {
 
@@ -304,55 +292,62 @@ public class RtspClient {
 				append = true;
 			}
 
-			write(new RtspRequestBuilder(rtspUrl)
+			String request = new RtspRequestBuilder(rtspUrl)
 					.begin(RtspRequest.SETUP, control, append)
 					.appendTransport(transport)
 					.appendCSeq(++cSeq)
 					.appendUserAgent(USER_AGENT)
-					.appendBasicAuthentication()
+					.appendAuthorization(authentication)
 					.appendSession(session)
 					.end()
-					.getRequest());
+					.getRequest();
 
-			RtspSetupResponseParser parser = new RtspSetupResponseParser();
-			waitForRtspResponseParserCompletion(parser);
+			RtspSetupResponseParser responseParser = new RtspSetupResponseParser();
 
-			updateSession(parser);
+			sendRequest(request, responseParser);
+
+			return responseParser.getReplyCode();
 
 		}
 
+		return 0;
+
+	}
+
+	public boolean sendPlayRequest() {
+		return sendPlayRequest("npt=0.000-");
 	}
 
 	public boolean sendPlayRequest(String range) {
 
 		if (rtspUrl != null) {
 
-			write(new RtspRequestBuilder(rtspUrl)
+			String request = new RtspRequestBuilder(rtspUrl)
 					.begin(RtspRequest.PLAY)
 					.appendCSeq(++cSeq)
 					.appendUserAgent(USER_AGENT)
-					.appendBasicAuthentication()
+					.appendAuthorization(authentication)
 					.appendSession(session)
 					.appendRange(range)
 					.end()
-					.getRequest());
+					.getRequest();
 
-			RtspPlayResponseParser parser = new RtspPlayResponseParser() {
+			RtspPlayResponseParser responseParser = new RtspPlayResponseParser() {
 
 				@Override
 				public void parseMessage(String message) {
 					super.parseMessage(message);
 
+					// TODO? Here we switch from parsing of RTSP messages to parsing of RTP packets
 					streamReader.setRtspParserEnabled(false);
 					streamReader.setRtpParserEnabled(true);
 
 				}
 			};
-			waitForRtspResponseParserCompletion(parser);
 
-			updateSession(parser);
+			sendRequest(request, responseParser);
 
-			return parser.getReplyCode() == 200;
+			return responseParser.getReplyCode() == 200;
 
 		} else {
 			return false;
@@ -360,45 +355,64 @@ public class RtspClient {
 
 	}
 
-	public List<RtspInterleavedFrame> getFrames() {
-		return frames;
-	}
-
 	public void sendTeardownRequest() {
 
 		if (rtspUrl != null) {
 
-			write(new RtspRequestBuilder(rtspUrl)
+			String request = new RtspRequestBuilder(rtspUrl)
 					.begin(RtspRequest.TEARDOWN)
 					.appendCSeq(++cSeq)
 					.appendUserAgent(USER_AGENT)
-					.appendBasicAuthentication()
+					.appendAuthorization(authentication)
 					.appendSession(session)
 					.end()
-					.getRequest());
+					.getRequest();
 
 			// No response is sent for TEARDOWN
+			sendRequest(request, null);
 
 		}
 
 	}
 
-	private void write(String message) {
+	private void sendRequest(String request, RtspResponseParser responseParser) {
 
 		if (TODO_DEBUG) {
 			System.out.println("Request:");
-			System.out.println(message);
+			System.out.println(request);
 		}
 
 		if (bufferedWriter != null) {
+
 			try {
-				bufferedWriter.write(message);
+
+				rtspResponseParser = responseParser;
+
+				bufferedWriter.write(request);
 				bufferedWriter.flush();
+
+				if (rtspResponseParser != null) {
+
+					rtspResponseParser.waitForCompletion();
+
+					if (rtspResponseParser.getReplyCode() == 401 && rtspResponseParser.getDigestAuthentication() != null) {
+						authentication = rtspResponseParser.getDigestAuthentication();
+					}
+
+					if (session == null && rtspResponseParser.getSession() != null) {
+						session = rtspResponseParser.getSession();
+					}
+
+					rtspResponseParser = null;
+
+				}
+
 			} catch (IOException e) {
 				if (TODO_DEBUG) {
 					Common.LOGGER.debug("Exception while writing message", e);
 				}
 			}
+
 		}
 
 	}

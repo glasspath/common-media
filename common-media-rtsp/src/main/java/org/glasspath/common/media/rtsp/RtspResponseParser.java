@@ -29,12 +29,22 @@ import java.io.StringReader;
 public abstract class RtspResponseParser {
 
 	public static final int DEFAULT_TIMEOUT = 10000;
+	public static final String RTSP_1_0_KEY_LOWER_CASE = "rtsp/1.0";
+	public static final String C_SEQ_KEY_LOWER_CASE = "cseq: ";
+	public static final String AUTH_REALM_START_KEY_LOWER_CASE = "realm=\"";
+	public static final String AUTH_REALM_END_KEY_LOWER_CASE = "\"";
+	public static final String AUTH_DIGEST_KEY_LOWER_CASE = "www-authenticate: digest";
+	public static final String AUTH_DIGEST_NONCE_START_KEY_LOWER_CASE = "nonce=\"";
+	public static final String AUTH_DIGEST_NONCE_END_KEY_LOWER_CASE = "\"";
+	public static final String AUTH_DIGEST_OPAQUE_START_KEY_LOWER_CASE = "opaque=\"";
+	public static final String AUTH_DIGEST_OPAQUE_END_KEY_LOWER_CASE = "\"";
 	public static final String SESSION_KEY_LOWER_CASE = "session: ";
-
 	public static final String SESSION_TIMEOUT_KEY_LOWER_CASE = ";timeout=";
 
 	private int timeout = DEFAULT_TIMEOUT;
 	private int replyCode = -1;
+	private int cSeq = -1;
+	private DigestAuthentication digestAuthentication = null;
 	private String session = null;
 	private boolean done = false;
 
@@ -54,6 +64,10 @@ public abstract class RtspResponseParser {
 		return replyCode;
 	}
 
+	public DigestAuthentication getDigestAuthentication() {
+		return digestAuthentication;
+	}
+
 	public String getSession() {
 		return session;
 	}
@@ -64,6 +78,11 @@ public abstract class RtspResponseParser {
 
 	public void parseMessage(String message) {
 
+		if (RtspClient.TODO_DEBUG) {
+			System.out.println("Response:");
+			System.out.println(message);
+		}
+
 		BufferedReader bufferedReader = new BufferedReader(new StringReader(message));
 
 		try {
@@ -71,6 +90,10 @@ public abstract class RtspResponseParser {
 			String line;
 			while ((line = bufferedReader.readLine()) != null) {
 				if (replyCode == -1 && parseReplyCode(line)) {
+					continue;
+				} else if (cSeq == -1 && parseCSeq(line)) {
+					continue;
+				} else if (replyCode == 401 && digestAuthentication == null && parseDigestAuthentication(line)) {
 					continue;
 				} else if (session == null && parseSession(line)) {
 					continue;
@@ -91,7 +114,7 @@ public abstract class RtspResponseParser {
 
 	private boolean parseReplyCode(String line) {
 
-		if (line.startsWith("RTSP/1.0")) {
+		if (line.toLowerCase().startsWith(RTSP_1_0_KEY_LOWER_CASE)) {
 
 			int indexOfFirstSpace = line.indexOf(" ");
 			if (indexOfFirstSpace > 0) {
@@ -114,6 +137,75 @@ public abstract class RtspResponseParser {
 
 	}
 
+	private boolean parseCSeq(String line) {
+
+		if (line.toLowerCase().startsWith(C_SEQ_KEY_LOWER_CASE)) {
+
+			try {
+				cSeq = Integer.parseInt(line.substring(C_SEQ_KEY_LOWER_CASE.length()));
+				return true;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
+
+		return false;
+
+	}
+
+	private boolean parseDigestAuthentication(String line) {
+
+		String lineLowerCase = line.toLowerCase();
+
+		if (lineLowerCase.startsWith(AUTH_DIGEST_KEY_LOWER_CASE)) {
+
+			int startIndex = lineLowerCase.indexOf(AUTH_DIGEST_NONCE_START_KEY_LOWER_CASE, AUTH_DIGEST_KEY_LOWER_CASE.length());
+			if (startIndex > 0) {
+
+				int fromIndex = startIndex + AUTH_DIGEST_NONCE_START_KEY_LOWER_CASE.length();
+				int endIndex = lineLowerCase.indexOf(AUTH_DIGEST_NONCE_END_KEY_LOWER_CASE, fromIndex);
+				if (endIndex > fromIndex) {
+					digestAuthentication = new DigestAuthentication();
+					digestAuthentication.nonce = line.substring(fromIndex, endIndex);
+				}
+
+			}
+
+			if (digestAuthentication != null) {
+
+				startIndex = lineLowerCase.indexOf(AUTH_REALM_START_KEY_LOWER_CASE, AUTH_DIGEST_KEY_LOWER_CASE.length());
+				if (startIndex > 0) {
+
+					int fromIndex = startIndex + AUTH_REALM_START_KEY_LOWER_CASE.length();
+					int endIndex = lineLowerCase.indexOf(AUTH_REALM_END_KEY_LOWER_CASE, fromIndex);
+					if (endIndex > fromIndex) {
+						digestAuthentication.realm = line.substring(fromIndex, endIndex);
+					}
+
+				}
+
+				startIndex = lineLowerCase.indexOf(AUTH_DIGEST_OPAQUE_START_KEY_LOWER_CASE, AUTH_DIGEST_KEY_LOWER_CASE.length());
+				if (startIndex > 0) {
+
+					int fromIndex = startIndex + AUTH_DIGEST_OPAQUE_START_KEY_LOWER_CASE.length();
+					int endIndex = lineLowerCase.indexOf(AUTH_DIGEST_OPAQUE_END_KEY_LOWER_CASE, fromIndex);
+					if (endIndex > fromIndex) {
+						digestAuthentication.opaque = line.substring(fromIndex, endIndex);
+					}
+
+				}
+
+				return true;
+
+			}
+
+		}
+
+		return false;
+
+	}
+
 	private boolean parseSession(String line) {
 
 		if (line.toLowerCase().startsWith(SESSION_KEY_LOWER_CASE)) {
@@ -124,7 +216,11 @@ public abstract class RtspResponseParser {
 
 				int indexOfTimeout = session.toLowerCase().indexOf(SESSION_TIMEOUT_KEY_LOWER_CASE);
 				if (indexOfTimeout > 0) {
+
 					session = session.substring(0, indexOfTimeout);
+
+					// TODO: Parse/store timeout?
+
 				}
 
 				return true;
@@ -154,6 +250,22 @@ public abstract class RtspResponseParser {
 			}
 
 		}
+
+	}
+
+	public static class Authentication {
+
+		public String realm = null;
+
+	}
+
+	public static class DigestAuthentication extends Authentication {
+
+		// http://www.webdav.org/specs/rfc2617.html
+		public String nonce = null;
+		public String opaque = null;
+		public String algorithm = null; // TODO
+		public boolean stale = false; // TODO
 
 	}
 

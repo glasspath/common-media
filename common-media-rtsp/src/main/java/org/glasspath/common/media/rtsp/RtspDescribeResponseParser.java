@@ -64,7 +64,7 @@ public class RtspDescribeResponseParser extends RtspResponseParser {
 	@Override
 	public void parseMessageLine(String line) {
 
-		final String lineLowerCase = line.toLowerCase();
+		String lineLowerCase = line.toLowerCase();
 
 		if (videoTrackInfo == null && lineLowerCase.startsWith(M_VIDEO_KEY_LOWER_CASE)) {
 
