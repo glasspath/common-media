@@ -31,11 +31,9 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import org.glasspath.common.Common;
-import org.glasspath.common.media.rtsp.RtspDescribeResponseParser.AudioTrackInfo;
-import org.glasspath.common.media.rtsp.RtspDescribeResponseParser.TrackInfo;
-import org.glasspath.common.media.rtsp.RtspDescribeResponseParser.VideoTrackInfo;
 import org.glasspath.common.media.rtsp.RtspRequestBuilder.RtspRequest;
-import org.glasspath.common.media.rtsp.RtspResponseParser.Authentication;
+import org.glasspath.common.media.rtsp.TrackInfo.AudioTrackInfo;
+import org.glasspath.common.media.rtsp.TrackInfo.VideoTrackInfo;
 
 public class RtspClient {
 
@@ -279,10 +277,10 @@ public class RtspClient {
 		if (rtspUrl != null) {
 
 			String control;
-			if (trackInfo.trackIdentifier.identifier != null && trackInfo.trackId >= 0) {
-				control = trackInfo.trackIdentifier.identifier + trackInfo.trackId;
+			if (trackInfo.getTrackIdentifier().identifier != null && trackInfo.getTrackId() >= 0) {
+				control = trackInfo.getTrackIdentifier().identifier + trackInfo.getTrackId();
 			} else {
-				control = trackInfo.control;
+				control = trackInfo.getControl();
 			}
 
 			boolean append;

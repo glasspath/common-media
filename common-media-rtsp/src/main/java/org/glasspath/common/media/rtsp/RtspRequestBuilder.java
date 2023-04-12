@@ -26,8 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
 
-import org.glasspath.common.media.rtsp.RtspResponseParser.Authentication;
-import org.glasspath.common.media.rtsp.RtspResponseParser.DigestAuthentication;
+import org.glasspath.common.media.rtsp.Authentication.DigestAuthentication;
 
 public class RtspRequestBuilder {
 
@@ -115,16 +114,12 @@ public class RtspRequestBuilder {
 
 				DigestAuthentication auth = (DigestAuthentication) authentication;
 
-				if (auth.nonce != null) {
+				if (auth.getRealm() != null && auth.getNonce() != null) {
 
 					String authHeader = "username=\"" + rtspUrl.getUsername() + "\"";
-
-					if (auth.realm != null) {
-						authHeader += ", realm=\"" + auth.realm + "\"";
-					}
-
+					authHeader += ", realm=\"" + auth.getRealm() + "\"";
 					authHeader += ", algorithm=\"MD5\"";
-					authHeader += ", nonce=\"" + auth.nonce + "\"";
+					authHeader += ", nonce=\"" + auth.getNonce() + "\"";
 					authHeader += ", uri=\"" + requestUri + "\"";
 
 					String response = "";
@@ -135,13 +130,13 @@ public class RtspRequestBuilder {
 
 						MessageDigest massageDigest = MessageDigest.getInstance("MD5");
 
-						String ha1Source = rtspUrl.getUsername() + ":" + auth.realm + ":" + rtspUrl.getPassword();
+						String ha1Source = rtspUrl.getUsername() + ":" + auth.getRealm() + ":" + rtspUrl.getPassword();
 						String ha1 = bytesToHex(massageDigest.digest(ha1Source.getBytes(StandardCharsets.UTF_8))).toLowerCase();
 
 						String ha2Source = requestMethod + ":" + requestUri;
 						String ha2 = bytesToHex(massageDigest.digest(ha2Source.getBytes(StandardCharsets.UTF_8))).toLowerCase();
 
-						String responseSource = ha1 + ":" + auth.nonce + ":" + ha2;
+						String responseSource = ha1 + ":" + auth.getNonce() + ":" + ha2;
 						response = bytesToHex(massageDigest.digest(responseSource.getBytes(StandardCharsets.UTF_8))).toLowerCase();
 
 					} catch (Exception e) {
@@ -150,12 +145,14 @@ public class RtspRequestBuilder {
 
 					authHeader += ", response=\"" + response + "\"";
 
-					if (auth.opaque != null) {
-						authHeader += ", opaque=\"" + auth.opaque + "\"";
+					if (auth.getOpaque() != null) {
+						authHeader += ", opaque=\"" + auth.getOpaque() + "\"";
 					}
 
 					request.append("Authorization: Digest " + authHeader + CRLF);
 
+				} else {
+					// TODO?
 				}
 
 			} else {

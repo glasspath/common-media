@@ -22,21 +22,11 @@
  */
 package org.glasspath.common.media.rtsp;
 
+import org.glasspath.common.media.rtsp.TrackInfo.AudioTrackInfo;
+import org.glasspath.common.media.rtsp.TrackInfo.TrackIdentifier;
+import org.glasspath.common.media.rtsp.TrackInfo.VideoTrackInfo;
+
 public class RtspDescribeResponseParser extends RtspResponseParser {
-
-	public static enum TrackIdentifier {
-
-		TRACK_ID("trackID="),
-		TRACK("track"),
-		STREAM("stream");
-
-		public final String identifier;
-
-		private TrackIdentifier(String identifier) {
-			this.identifier = identifier;
-		}
-
-	}
 
 	public static final String M_VIDEO_KEY_LOWER_CASE = "m=video ";
 	public static final String M_AUDIO_KEY_LOWER_CASE = "m=audio ";
@@ -83,7 +73,7 @@ public class RtspDescribeResponseParser extends RtspResponseParser {
 		} else if (lastConfiguredTrack != null && lastConfiguredTrack == videoTrackInfo && lineLowerCase.startsWith(A_FRAME_RATE_KEY_LOWER_CASE)) {
 
 			try {
-				videoTrackInfo.frameRate = Double.parseDouble(line.substring(A_FRAME_RATE_KEY_LOWER_CASE.length()));
+				videoTrackInfo.setFrameRate(Double.parseDouble(line.substring(A_FRAME_RATE_KEY_LOWER_CASE.length())));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -91,7 +81,7 @@ public class RtspDescribeResponseParser extends RtspResponseParser {
 		} else if (lastConfiguredTrack != null && lineLowerCase.startsWith(A_CONTROL_KEY_LOWER_CASE)) {
 
 			String trackIdString = line.substring(A_CONTROL_KEY_LOWER_CASE.length());
-			lastConfiguredTrack.control = trackIdString;
+			lastConfiguredTrack.setControl(trackIdString);
 
 			TrackIdentifier trackIdentifier;
 
@@ -111,8 +101,8 @@ public class RtspDescribeResponseParser extends RtspResponseParser {
 
 					final int trackId = Integer.parseInt(trackIdString.substring(trackIdentifier.identifier.length()));
 
-					lastConfiguredTrack.trackIdentifier = trackIdentifier;
-					lastConfiguredTrack.trackId = trackId;
+					lastConfiguredTrack.setTrackIdentifier(trackIdentifier);
+					lastConfiguredTrack.setTrackId(trackId);
 
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -127,7 +117,7 @@ public class RtspDescribeResponseParser extends RtspResponseParser {
 				spropParameterSets = spropParameterSets.substring(0, indexOf);
 			}
 
-			lastConfiguredTrack.spropsParameterSets = spropParameterSets;
+			lastConfiguredTrack.setSpropsParameterSets(spropParameterSets);
 
 		}
 
@@ -139,54 +129,19 @@ public class RtspDescribeResponseParser extends RtspResponseParser {
 		if (mediaInfo.length == 3) {
 
 			try {
-				track.mediaPort = Integer.parseInt(mediaInfo[0]);
+				track.setMediaPort(Integer.parseInt(mediaInfo[0]));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
-			track.mediaTransportProtocol = mediaInfo[1];
+			track.setMediaTransportProtocol(mediaInfo[1]);
 
 			try {
-				track.mediaFormat = Integer.parseInt(mediaInfo[2]);
+				track.setMediaFormat(Integer.parseInt(mediaInfo[2]));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
-		}
-
-	}
-
-	public static class VideoTrackInfo extends TrackInfo {
-
-		public static final double DEFAULT_FRAME_RATE = 30.0;
-		public static final int DEFAULT_WIDTH = 1280;
-		public static final int DEFAULT_HEIGHT = 780;
-
-		public double frameRate = DEFAULT_FRAME_RATE;
-		public int width = DEFAULT_WIDTH;
-		public int height = DEFAULT_HEIGHT;
-
-	}
-
-	public static class AudioTrackInfo extends TrackInfo {
-
-	}
-
-	public static class TrackInfo {
-
-		public static final String DEFAULT_MEDIA_TRANSPORT_PROTOCOL = "RTP/AVP";
-
-		public String control = "";
-		public TrackIdentifier trackIdentifier = TrackIdentifier.TRACK_ID;
-		public int trackId = -1;
-		public int mediaPort = 0;
-		public String mediaTransportProtocol = DEFAULT_MEDIA_TRANSPORT_PROTOCOL;
-		public int mediaFormat = 0;
-		public String spropsParameterSets = null;
-
-		@Override
-		public String toString() {
-			return trackIdentifier.identifier + " = " + trackId;
 		}
 
 	}

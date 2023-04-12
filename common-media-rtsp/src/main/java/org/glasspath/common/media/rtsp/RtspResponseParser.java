@@ -26,6 +26,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 
+import org.glasspath.common.media.rtsp.Authentication.DigestAuthentication;
+
 public abstract class RtspResponseParser {
 
 	public static final int DEFAULT_TIMEOUT = 10000;
@@ -167,20 +169,21 @@ public abstract class RtspResponseParser {
 				int endIndex = lineLowerCase.indexOf(AUTH_DIGEST_NONCE_END_KEY_LOWER_CASE, fromIndex);
 				if (endIndex > fromIndex) {
 					digestAuthentication = new DigestAuthentication();
-					digestAuthentication.nonce = line.substring(fromIndex, endIndex);
+					digestAuthentication.setNonce(line.substring(fromIndex, endIndex));
 				}
 
 			}
 
 			if (digestAuthentication != null) {
 
+				// TODO: Realm should always be available
 				startIndex = lineLowerCase.indexOf(AUTH_REALM_START_KEY_LOWER_CASE, AUTH_DIGEST_KEY_LOWER_CASE.length());
 				if (startIndex > 0) {
 
 					int fromIndex = startIndex + AUTH_REALM_START_KEY_LOWER_CASE.length();
 					int endIndex = lineLowerCase.indexOf(AUTH_REALM_END_KEY_LOWER_CASE, fromIndex);
 					if (endIndex > fromIndex) {
-						digestAuthentication.realm = line.substring(fromIndex, endIndex);
+						digestAuthentication.setRealm(line.substring(fromIndex, endIndex));
 					}
 
 				}
@@ -191,7 +194,7 @@ public abstract class RtspResponseParser {
 					int fromIndex = startIndex + AUTH_DIGEST_OPAQUE_START_KEY_LOWER_CASE.length();
 					int endIndex = lineLowerCase.indexOf(AUTH_DIGEST_OPAQUE_END_KEY_LOWER_CASE, fromIndex);
 					if (endIndex > fromIndex) {
-						digestAuthentication.opaque = line.substring(fromIndex, endIndex);
+						digestAuthentication.setOpaque(line.substring(fromIndex, endIndex));
 					}
 
 				}
@@ -250,22 +253,6 @@ public abstract class RtspResponseParser {
 			}
 
 		}
-
-	}
-
-	public static class Authentication {
-
-		public String realm = null;
-
-	}
-
-	public static class DigestAuthentication extends Authentication {
-
-		// http://www.webdav.org/specs/rfc2617.html
-		public String nonce = null;
-		public String opaque = null;
-		public String algorithm = null; // TODO
-		public boolean stale = false; // TODO
 
 	}
 
