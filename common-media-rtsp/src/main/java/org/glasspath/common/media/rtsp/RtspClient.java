@@ -37,16 +37,22 @@ import org.glasspath.common.media.rtsp.TrackInfo.VideoTrackInfo;
 
 public class RtspClient {
 
+	public static enum Transport {
+		TCP,
+		UDP
+	}
+
 	public static boolean TODO_DEBUG = true;
 
 	public static final String USER_AGENT = "Lavf58.29.100";
-	public static int CONNECT_TIMEOUT = 2000;
+	public static final int DEFAULT_TIMEOUT = 2000;
 
+	private final Transport transport;
 	private RtspUrl rtspUrl = null;
+	private int timeout = DEFAULT_TIMEOUT;
 	private boolean disconnected = true;
 	private Socket socket = null;
-	private DataInputStream dataInputStream = null;
-	private BufferedWriter bufferedWriter = null;
+	private BufferedWriter writer = null;
 	private RtspStreamReader streamReader = null;
 	private RtspResponseParser rtspResponseParser = null;
 	private int cSeq = 0;
@@ -55,13 +61,15 @@ public class RtspClient {
 	private String[] options = null;
 	private VideoTrackInfo videoTrackInfo = null;
 	private AudioTrackInfo audioTrackInfo = null;
+	private int serverPortFrom = -1;
+	private int serverPortTo = -1;
 
 	public RtspClient() {
-
+		this(false);
 	}
 
-	public RtspClient(RtspUrl rtspUrl) {
-		this.rtspUrl = rtspUrl;
+	public RtspClient(boolean udp) {
+		transport = udp ? Transport.UDP : Transport.TCP;
 	}
 
 	public RtspUrl getRtspUrl() {
@@ -72,6 +80,14 @@ public class RtspClient {
 		this.rtspUrl = rtspUrl;
 	}
 
+	public int getTimeout() {
+		return timeout;
+	}
+
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
+	}
+
 	public boolean connect() {
 
 		if (rtspUrl != null) {
@@ -79,11 +95,17 @@ public class RtspClient {
 			try {
 
 				socket = new Socket();
-				socket.connect(new InetSocketAddress(rtspUrl.getHost(), rtspUrl.getPort()), CONNECT_TIMEOUT);
-				dataInputStream = new DataInputStream(socket.getInputStream());
-				bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+				socket.connect(new InetSocketAddress(rtspUrl.getHost(), rtspUrl.getPort()), timeout);
 
-				createRtspStreamReader();
+				// Create a BufferedWriter for sending requests
+				writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+
+				if (transport == Transport.UDP) {
+					// TODO: Implement RTP/TRCP over UDP
+				}
+
+				// Install a RtspStreamReader for receiving responses and interleaved frames
+				createRtspStreamReader(new DataInputStream(socket.getInputStream()));
 
 				disconnected = false;
 
@@ -105,13 +127,13 @@ public class RtspClient {
 
 	}
 
-	private void createRtspStreamReader() {
+	private void createRtspStreamReader(DataInputStream dataInputStream) {
 
 		if (streamReader != null) {
-			streamReader.exit();
+			streamReader.stop();
 		}
 
-		streamReader = new RtspStreamReader(dataInputStream) {
+		streamReader = new RtspStreamReader() {
 
 			@Override
 			public boolean rtspMessageReceived(String message) {
@@ -142,7 +164,7 @@ public class RtspClient {
 
 		streamReader.setRtspParserEnabled(true);
 		streamReader.setRtpParserEnabled(false);
-		streamReader.start();
+		streamReader.startReading(dataInputStream);
 
 	}
 
@@ -154,10 +176,10 @@ public class RtspClient {
 
 		if (streamReader != null) {
 
-			streamReader.exit();
+			streamReader.stop();
 
 			int count = 0;
-			while (!streamReader.isExited() && count < 100) {
+			while (!streamReader.isStopped() && count < 100) {
 
 				try {
 					Thread.sleep(10);
@@ -272,9 +294,27 @@ public class RtspClient {
 		return audioTrackInfo;
 	}
 
+	public int sendSetupRequest() {
+
+		String t;
+
+		switch (transport) {
+		case UDP:
+			t = "RTP/AVP/UDP;unicast;client_port=5002-5003;mode=receive";
+			break;
+
+		default:
+			t = "RTP/AVP/TCP;unicast;interleaved=0-1";
+			break;
+		}
+
+		return sendSetupRequest(videoTrackInfo, t);
+
+	}
+
 	public int sendSetupRequest(TrackInfo trackInfo, String transport) {
 
-		if (rtspUrl != null) {
+		if (rtspUrl != null && trackInfo != null) {
 
 			String control;
 			if (trackInfo.getTrackIdentifier().identifier != null && trackInfo.getTrackId() >= 0) {
@@ -304,12 +344,23 @@ public class RtspClient {
 
 			sendRequest(request, responseParser);
 
+			serverPortFrom = responseParser.getServerPortFrom();
+			serverPortTo = responseParser.getServerPortTo();
+
 			return responseParser.getReplyCode();
 
 		}
 
 		return 0;
 
+	}
+
+	public int getServerPortFrom() {
+		return serverPortFrom;
+	}
+
+	public int getServerPortTo() {
+		return serverPortTo;
 	}
 
 	public boolean sendPlayRequest() {
@@ -380,14 +431,14 @@ public class RtspClient {
 			System.out.println(request);
 		}
 
-		if (bufferedWriter != null) {
+		if (writer != null) {
 
 			try {
 
 				rtspResponseParser = responseParser;
 
-				bufferedWriter.write(request);
-				bufferedWriter.flush();
+				writer.write(request);
+				writer.flush();
 
 				if (rtspResponseParser != null) {
 

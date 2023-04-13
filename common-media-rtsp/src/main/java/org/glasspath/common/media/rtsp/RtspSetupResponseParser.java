@@ -24,13 +24,67 @@ package org.glasspath.common.media.rtsp;
 
 public class RtspSetupResponseParser extends RtspResponseParser {
 
+	public static final String TRANSPORT_KEY_LOWER_CASE = "transport: ";
+	public static final String SERVER_PORT_KEY_LOWER_CASE = "server_port=";
+
+	private int serverPortFrom = -1;
+	private int serverPortTo = -1;
+
 	public RtspSetupResponseParser() {
 
 	}
 
+	public int getServerPortFrom() {
+		return serverPortFrom;
+	}
+
+	public int getServerPortTo() {
+		return serverPortTo;
+	}
+
 	@Override
 	public void parseMessageLine(String line) {
-		// TODO
+
+		if (line.toLowerCase().startsWith(TRANSPORT_KEY_LOWER_CASE)) {
+
+			String[] entries = line.substring(TRANSPORT_KEY_LOWER_CASE.length()).split(";");
+
+			for (String entry : entries) {
+
+				if (entry.toLowerCase().startsWith(SERVER_PORT_KEY_LOWER_CASE)) {
+
+					String serverPort = entry.substring(SERVER_PORT_KEY_LOWER_CASE.length());
+					if (serverPort.contains("-")) {
+
+						String[] serverPorts = serverPort.split("-");
+						if (serverPorts.length >= 2) {
+
+							try {
+								serverPortFrom = Integer.parseInt(serverPorts[0]);
+								serverPortTo = Integer.parseInt(serverPorts[1]);
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+
+						}
+
+					} else {
+
+						try {
+							serverPortFrom = Integer.parseInt(serverPort);
+							serverPortTo = serverPortFrom;
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+
+					}
+
+				}
+
+			}
+
+		}
+
 	}
 
 }

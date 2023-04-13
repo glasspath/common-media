@@ -57,7 +57,6 @@ public abstract class RtspStreamReader {
 		WAIT_FOR_END_OF_PACKET
 	}
 
-	private final DataInputStream dataInputStream;
 	private final byte[] readBuffer = new byte[READ_BUFFER_LENGTH];
 	private final byte[] messageBuffer = new byte[MESSAGE_BUFFER_LENGTH];
 
@@ -84,8 +83,8 @@ public abstract class RtspStreamReader {
 	private byte rtpSequenceNumberByte1 = 0;
 	private Integer rtpSequenceNumber = null;
 
-	private boolean exit = false;
-	private boolean exited = false;
+	private boolean stop = false;
+	private boolean stopped = false;
 
 	private boolean printDebugReceivedBytes = false;
 	private byte[] debugReceivedBytes = new byte[20];
@@ -95,8 +94,8 @@ public abstract class RtspStreamReader {
 
 	public boolean tempLengthFix = false; // TODO!
 
-	public RtspStreamReader(DataInputStream dataInputStream) {
-		this.dataInputStream = dataInputStream;
+	public RtspStreamReader() {
+
 	}
 
 	public boolean isRtspParserEnabled() {
@@ -115,60 +114,64 @@ public abstract class RtspStreamReader {
 		this.rtpParserEnabled = rtpParserEnabled;
 	}
 
-	public void start() {
+	public void startReading(DataInputStream dataInputStream) {
 
-		new Thread(new Runnable() {
+		if (dataInputStream != null) {
 
-			// int count = 0;
+			new Thread(new Runnable() {
 
-			@Override
-			public void run() {
+				// int count = 0;
 
-				while (!exit) {
+				@Override
+				public void run() {
 
-					try {
+					while (!stop) {
 
-						// while (dataInputStream.available() > 0) {
-						// readByte(dataInputStream.readByte());
-						// }
-
-						readLength = dataInputStream.read(readBuffer, 0, readBuffer.length);
-						readIndex = 0;
-
-						// System.out.println("Parsing " + readLength + " bytes, exit = " + exit);
-						parseReceivedBytes();
-
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-
-					try {
-						Thread.sleep(READ_INTERVAL);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-
-					/*
-					count++;
-					if (count > 10) {
 						try {
-							Thread.sleep(1);
+
+							// while (dataInputStream.available() > 0) {
+							// readByte(dataInputStream.readByte());
+							// }
+
+							readLength = dataInputStream.read(readBuffer, 0, readBuffer.length);
+							readIndex = 0;
+
+							// System.out.println("Parsing " + readLength + " bytes, exit = " + exit);
+							parseReceivedBytes();
+
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+
+						try {
+							Thread.sleep(READ_INTERVAL);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
-						count = 0;
+
+						/*
+						count++;
+						if (count > 10) {
+							try {
+								Thread.sleep(1);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+							count = 0;
+						}
+						 */
+
 					}
-					 */
+
+					if (TODO_DEBUG) {
+						System.out.println("RTSP Stream Reader exited");
+					}
+					stopped = true;
 
 				}
+			}).start();
 
-				if (TODO_DEBUG) {
-					System.out.println("RTSP Stream Reader exited");
-				}
-				exited = true;
-
-			}
-		}).start();
+		}
 
 	}
 
@@ -453,12 +456,12 @@ public abstract class RtspStreamReader {
 
 	}
 
-	public void exit() {
-		exit = true;
+	public void stop() {
+		stop = true;
 	}
 
-	public boolean isExited() {
-		return exited;
+	public boolean isStopped() {
+		return stopped;
 	}
 
 	public abstract boolean rtspMessageReceived(String message);
