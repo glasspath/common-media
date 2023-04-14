@@ -24,7 +24,11 @@ package org.glasspath.common.media.rtsp;
 
 import java.io.DataInputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.DatagramPacket;
+import java.net.MulticastSocket;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.glasspath.common.media.rtsp.RtpPacket.FirstRtpHeaderByte;
 import org.glasspath.common.media.rtsp.RtpPacket.SecondRtpHeaderByte;
@@ -166,12 +170,95 @@ public abstract class RtspStreamReader {
 					if (TODO_DEBUG) {
 						System.out.println("RTSP Stream Reader exited");
 					}
+
 					stopped = true;
 
 				}
 			}).start();
 
 		}
+
+	}
+
+	public void startReading(MulticastSocket socket) {
+
+		new Thread(new Runnable() {
+
+			private final List<RtpPacket> buffer = new ArrayList<>();
+			private int sequenceNumber = -1;
+
+			@Override
+			public void run() {
+
+				try {
+
+					while (!stop) {
+
+						byte bytes[] = new byte[4096];
+
+						DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
+
+						socket.receive(packet);
+
+						if (packet.getLength() > 0 && packet.getLength() <= bytes.length) {
+
+							RtpPacket rtpPacket = new RtpPacket(Arrays.copyOf(bytes, packet.getLength()));
+
+							if (sequenceNumber != -1 && rtpPacket.getSequenceNumber() != sequenceNumber + 1) {
+								if (TODO_DEBUG) {
+									System.err.println("Sequence from " + sequenceNumber + " to " + rtpPacket.getSequenceNumber());
+								}
+							}
+							if (rtpPacket.getSequenceNumber() > sequenceNumber) {
+								sequenceNumber = rtpPacket.getSequenceNumber();
+							}
+
+							if (buffer.size() > 0) {
+
+								for (int i = 0; i < buffer.size(); i++) {
+
+									if (rtpPacket.getSequenceNumber() < buffer.get(i).getSequenceNumber()) {
+
+										buffer.add(i, rtpPacket);
+
+										if (TODO_DEBUG) {
+											System.err.println("RtpPacket inserted: " + rtpPacket.getSequenceNumber() + " (current: " + sequenceNumber + ")");
+										}
+
+										rtpPacket = null;
+										break;
+
+									}
+								}
+
+								if (rtpPacket != null) {
+									buffer.add(rtpPacket);
+								}
+
+								// TODO
+								if (buffer.size() > 10) {
+									rtpPacketReceived(buffer.remove(0));
+								}
+
+							} else {
+								buffer.add(rtpPacket);
+							}
+
+						}
+
+					}
+
+					socket.close();
+
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+				// TODO
+				// stopped = true;
+
+			}
+		}).start();
 
 	}
 
@@ -389,9 +476,10 @@ public abstract class RtspStreamReader {
 							int to = from + rtspFrame.getLength();
 							rtspFrame.getRtpPacket().parseBytes(Arrays.copyOfRange(messageBuffer, from, to));
 
-							if (rtspInterleavedFrameReceived(rtspFrame)) {
-								reset();
-							}
+							rtspInterleavedFrameReceived(rtspFrame);
+							rtpPacketReceived(rtspFrame.getRtpPacket());
+
+							reset();
 
 						}
 
@@ -466,6 +554,8 @@ public abstract class RtspStreamReader {
 
 	public abstract boolean rtspMessageReceived(String message);
 
-	public abstract boolean rtspInterleavedFrameReceived(RtspInterleavedFrame rtspInterleavedFrame);
+	public abstract void rtspInterleavedFrameReceived(RtspInterleavedFrame rtspInterleavedFrame);
+
+	public abstract void rtpPacketReceived(RtpPacket rtpPacket);
 
 }

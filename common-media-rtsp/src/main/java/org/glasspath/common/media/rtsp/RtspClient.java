@@ -26,7 +26,9 @@ import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -54,6 +56,7 @@ public class RtspClient {
 	private Socket socket = null;
 	private BufferedWriter writer = null;
 	private RtspStreamReader streamReader = null;
+	private MulticastSocket multicastSocket = null;
 	private RtspResponseParser rtspResponseParser = null;
 	private int cSeq = 0;
 	private Authentication authentication = null;
@@ -61,6 +64,9 @@ public class RtspClient {
 	private String[] options = null;
 	private VideoTrackInfo videoTrackInfo = null;
 	private AudioTrackInfo audioTrackInfo = null;
+	private String multicastAddress = "234.5.6.7";
+	private int clientPortFrom = 5075;
+	private int clientPortTo = 5076;
 	private int serverPortFrom = -1;
 	private int serverPortTo = -1;
 
@@ -88,6 +94,30 @@ public class RtspClient {
 		this.timeout = timeout;
 	}
 
+	public String getMulticastAddress() {
+		return multicastAddress;
+	}
+
+	public void setMulticastAddress(String multicastAddress) {
+		this.multicastAddress = multicastAddress;
+	}
+
+	public int getClientPortFrom() {
+		return clientPortFrom;
+	}
+
+	public void setClientPortFrom(int clientPortFrom) {
+		this.clientPortFrom = clientPortFrom;
+	}
+
+	public int getClientPortTo() {
+		return clientPortTo;
+	}
+
+	public void setClientPortTo(int clientPortTo) {
+		this.clientPortTo = clientPortTo;
+	}
+
 	public boolean connect() {
 
 		if (rtspUrl != null) {
@@ -99,10 +129,6 @@ public class RtspClient {
 
 				// Create a BufferedWriter for sending requests
 				writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-
-				if (transport == Transport.UDP) {
-					// TODO: Implement RTP/TRCP over UDP
-				}
 
 				// Install a RtspStreamReader for receiving responses and interleaved frames
 				createRtspStreamReader(new DataInputStream(socket.getInputStream()));
@@ -153,18 +179,52 @@ public class RtspClient {
 			}
 
 			@Override
-			public boolean rtspInterleavedFrameReceived(RtspInterleavedFrame rtspInterleavedFrame) {
+			public void rtspInterleavedFrameReceived(RtspInterleavedFrame rtspInterleavedFrame) {
 
-				rtpPacketReceived(rtspInterleavedFrame.getRtpPacket());
+			}
 
-				return true;
-
+			@Override
+			public void rtpPacketReceived(RtpPacket rtpPacket) {
+				RtspClient.this.rtpPacketReceived(rtpPacket);
 			}
 		};
 
 		streamReader.setRtspParserEnabled(true);
 		streamReader.setRtpParserEnabled(false);
 		streamReader.startReading(dataInputStream);
+
+	}
+
+	private void createMulticastSocket() {
+
+		if (streamReader != null) {
+
+			if (multicastSocket != null) {
+
+				try {
+					multicastSocket.close();
+				} catch (Exception e) {
+					if (TODO_DEBUG) {
+						Common.LOGGER.debug("Exception while closing MulticastSocket", e);
+					}
+				}
+
+			}
+
+			try {
+
+				multicastSocket = new MulticastSocket(clientPortFrom);
+				multicastSocket.joinGroup(InetAddress.getByName(multicastAddress));
+
+				streamReader.startReading(multicastSocket);
+
+			} catch (Exception e) {
+				if (TODO_DEBUG) {
+					Common.LOGGER.debug("Exception while creating MulticastSocket", e);
+				}
+			}
+
+		}
 
 	}
 
@@ -208,6 +268,20 @@ public class RtspClient {
 			}
 
 			socket = null;
+
+		}
+
+		if (multicastSocket != null) {
+
+			try {
+				multicastSocket.close();
+			} catch (Exception e) {
+				if (TODO_DEBUG) {
+					Common.LOGGER.debug("Exception while disconnecting", e);
+				}
+			}
+
+			multicastSocket = null;
 
 		}
 
@@ -300,7 +374,8 @@ public class RtspClient {
 
 		switch (transport) {
 		case UDP:
-			t = "RTP/AVP/UDP;unicast;client_port=5002-5003;mode=receive";
+			// t = "RTP/AVP;unicast;client_port=" + clientPortFrom + "-" + clientPortTo;
+			t = "RTP/AVP/UDP;unicast;client_port=" + clientPortFrom + "-" + clientPortTo + ";mode=receive";
 			break;
 
 		default:
@@ -346,6 +421,10 @@ public class RtspClient {
 
 			serverPortFrom = responseParser.getServerPortFrom();
 			serverPortTo = responseParser.getServerPortTo();
+
+			if (this.transport == Transport.UDP) {
+				createMulticastSocket();
+			}
 
 			return responseParser.getReplyCode();
 
