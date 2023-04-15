@@ -69,6 +69,7 @@ public class RtspClient {
 	private int clientPortTo = 5076;
 	private int serverPortFrom = -1;
 	private int serverPortTo = -1;
+	private long ssrc = 0;
 
 	public RtspClient() {
 		this(false);
@@ -185,7 +186,13 @@ public class RtspClient {
 
 			@Override
 			public void rtpPacketReceived(RtpPacket rtpPacket) {
-				RtspClient.this.rtpPacketReceived(rtpPacket);
+				if (rtpPacket.getSsrc() == ssrc) {
+					RtspClient.this.rtpPacketReceived(rtpPacket);
+				} else {
+					if (TODO_DEBUG) {
+						System.err.println("ssrc mismatch: " + rtpPacket.getSsrc() + " != " + ssrc);
+					}
+				}
 			}
 		};
 
@@ -375,7 +382,7 @@ public class RtspClient {
 		switch (transport) {
 		case UDP:
 			// t = "RTP/AVP;unicast;client_port=" + clientPortFrom + "-" + clientPortTo;
-			t = "RTP/AVP/UDP;unicast;client_port=" + clientPortFrom + "-" + clientPortTo + ";mode=receive";
+			t = "RTP/AVP/UDP;unicast;client_port=" + clientPortFrom + "-" + clientPortTo + ";mode=receive"; // TODO?
 			break;
 
 		default:
@@ -421,6 +428,7 @@ public class RtspClient {
 
 			serverPortFrom = responseParser.getServerPortFrom();
 			serverPortTo = responseParser.getServerPortTo();
+			ssrc = responseParser.getSsrc();
 
 			if (this.transport == Transport.UDP) {
 				createMulticastSocket();
@@ -440,6 +448,10 @@ public class RtspClient {
 
 	public int getServerPortTo() {
 		return serverPortTo;
+	}
+
+	public long getSsrc() {
+		return ssrc;
 	}
 
 	public boolean sendPlayRequest() {

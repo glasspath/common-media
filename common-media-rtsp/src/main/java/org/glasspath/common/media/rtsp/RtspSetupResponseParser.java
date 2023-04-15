@@ -26,9 +26,11 @@ public class RtspSetupResponseParser extends RtspResponseParser {
 
 	public static final String TRANSPORT_KEY_LOWER_CASE = "transport: ";
 	public static final String SERVER_PORT_KEY_LOWER_CASE = "server_port=";
+	public static final String SSRC_KEY_LOWER_CASE = "ssrc=";
 
 	private int serverPortFrom = -1;
 	private int serverPortTo = -1;
+	private long ssrc = 0;
 
 	public RtspSetupResponseParser() {
 
@@ -42,6 +44,10 @@ public class RtspSetupResponseParser extends RtspResponseParser {
 		return serverPortTo;
 	}
 
+	public long getSsrc() {
+		return ssrc;
+	}
+
 	@Override
 	public void parseMessageLine(String line) {
 
@@ -51,7 +57,9 @@ public class RtspSetupResponseParser extends RtspResponseParser {
 
 			for (String entry : entries) {
 
-				if (entry.toLowerCase().startsWith(SERVER_PORT_KEY_LOWER_CASE)) {
+				String entryLowerCase = entry.toLowerCase();
+
+				if (entryLowerCase.startsWith(SERVER_PORT_KEY_LOWER_CASE)) {
 
 					String serverPort = entry.substring(SERVER_PORT_KEY_LOWER_CASE.length());
 					if (serverPort.contains("-")) {
@@ -77,6 +85,14 @@ public class RtspSetupResponseParser extends RtspResponseParser {
 							e.printStackTrace();
 						}
 
+					}
+
+				} else if (entryLowerCase.startsWith(SSRC_KEY_LOWER_CASE)) {
+
+					try {
+						ssrc = Long.parseLong(entry.substring(SSRC_KEY_LOWER_CASE.length()), 16);
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
 
 				}
