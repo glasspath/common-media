@@ -46,11 +46,13 @@ public class RtspClient {
 
 	public static boolean TODO_DEBUG = true;
 
-	public static final String USER_AGENT = "Lavf58.29.100";
+	public static final String DEFAULT_USER_AGENT = "Lavf58.29.100";
+	public static final String DEFAULT_PLAY_REQUEST_RANGE = "npt=0.000-";
 	public static final int DEFAULT_TIMEOUT = 2000;
 
 	private final Transport transport;
 	private RtspUrl rtspUrl = null;
+	private String userAgent = DEFAULT_USER_AGENT;
 	private int timeout = DEFAULT_TIMEOUT;
 	private boolean disconnected = true;
 	private Socket socket = null;
@@ -85,6 +87,14 @@ public class RtspClient {
 
 	public void setRtspUrl(RtspUrl rtspUrl) {
 		this.rtspUrl = rtspUrl;
+	}
+
+	public String getUserAgent() {
+		return userAgent;
+	}
+
+	public void setUserAgent(String userAgent) {
+		this.userAgent = userAgent;
 	}
 
 	public int getTimeout() {
@@ -311,7 +321,7 @@ public class RtspClient {
 			String request = new RtspRequestBuilder(rtspUrl)
 					.begin(RtspRequest.OPTIONS)
 					.appendCSeq(++cSeq)
-					.appendUserAgent(USER_AGENT)
+					.appendUserAgent(userAgent)
 					.appendAuthorization(authentication)
 					.appendSession(session)
 					.end()
@@ -342,7 +352,7 @@ public class RtspClient {
 			String request = new RtspRequestBuilder(rtspUrl)
 					.begin(RtspRequest.DESCRIBE)
 					.appendCSeq(++cSeq)
-					.appendUserAgent(USER_AGENT)
+					.appendUserAgent(userAgent)
 					.appendAuthorization(authentication)
 					.appendSession(session)
 					.end()
@@ -416,7 +426,7 @@ public class RtspClient {
 					.begin(RtspRequest.SETUP, control, append)
 					.appendTransport(transport)
 					.appendCSeq(++cSeq)
-					.appendUserAgent(USER_AGENT)
+					.appendUserAgent(userAgent)
 					.appendAuthorization(authentication)
 					.appendSession(session)
 					.end()
@@ -455,7 +465,7 @@ public class RtspClient {
 	}
 
 	public boolean sendPlayRequest() {
-		return sendPlayRequest("npt=0.000-");
+		return sendPlayRequest(DEFAULT_PLAY_REQUEST_RANGE);
 	}
 
 	public boolean sendPlayRequest(String range) {
@@ -465,7 +475,7 @@ public class RtspClient {
 			String request = new RtspRequestBuilder(rtspUrl)
 					.begin(RtspRequest.PLAY)
 					.appendCSeq(++cSeq)
-					.appendUserAgent(USER_AGENT)
+					.appendUserAgent(userAgent)
 					.appendAuthorization(authentication)
 					.appendSession(session)
 					.appendRange(range)
@@ -502,7 +512,7 @@ public class RtspClient {
 			String request = new RtspRequestBuilder(rtspUrl)
 					.begin(RtspRequest.TEARDOWN)
 					.appendCSeq(++cSeq)
-					.appendUserAgent(USER_AGENT)
+					.appendUserAgent(userAgent)
 					.appendAuthorization(authentication)
 					.appendSession(session)
 					.end()
