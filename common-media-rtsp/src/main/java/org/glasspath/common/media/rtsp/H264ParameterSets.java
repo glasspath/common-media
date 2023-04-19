@@ -25,7 +25,7 @@ package org.glasspath.common.media.rtsp;
 import java.util.Base64;
 
 import org.glasspath.common.media.h264.H264NalUnit;
-import org.glasspath.common.media.rtsp.RtpPacket.NalUnitType;
+import org.glasspath.common.media.h264.H264NalUnit.NalUnitType;
 
 public class H264ParameterSets {
 

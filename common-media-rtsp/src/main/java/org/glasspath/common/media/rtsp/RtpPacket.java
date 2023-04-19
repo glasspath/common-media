@@ -25,68 +25,9 @@ package org.glasspath.common.media.rtsp;
 import java.nio.ByteBuffer;
 
 import org.glasspath.common.media.h264.H264NalUnit;
+import org.glasspath.common.media.h264.H264NalUnit.NalFragmentType;
 
 public class RtpPacket {
-
-	public static enum NalUnitType {
-
-		UNKNOWN(-1),
-		// TODO
-		CODED_SLICE_IDR_PICTURE(5),
-		SUPPLEMENTAL_ENHANCEMENT_INFORMATION(6),
-		SEQUENCE_PARAMETER_SET(7),
-		PICTURE_PARAMETER_SET(8),
-		ACCESS_UNIT_DELIMITER(9),
-		END_OF_SEQUENCE(10),
-		END_OF_STREAM(11)
-		// TODO
-		;
-
-		private final int typeValue;
-
-		private NalUnitType(int typeValue) {
-			this.typeValue = typeValue;
-		}
-
-		public int getTypeValue() {
-			return typeValue;
-		}
-
-	}
-
-	public static enum NalFragmentType {
-
-		UNKNOWN(-1),
-		NAL_UNIT(1, 23),
-		STAP_A(24),
-		STAP_B(25),
-		MTAP16(26),
-		MTAP24(27),
-		FU_A(28),
-		FU_B(29);
-
-		private final int valueFrom;
-		private final int valueTo;
-
-		private NalFragmentType(int value) {
-			this.valueFrom = value;
-			this.valueTo = value;
-		}
-
-		private NalFragmentType(int valueFrom, int valueTo) {
-			this.valueFrom = valueFrom;
-			this.valueTo = valueTo;
-		}
-
-		public int getValueFrom() {
-			return valueFrom;
-		}
-
-		public int getValueTo() {
-			return valueTo;
-		}
-
-	}
 
 	public static enum PayloadType {
 
@@ -171,7 +112,7 @@ public class RtpPacket {
 			nalNriBits = (byte) (nalUnitOctet & 0x60);
 			nalType = (byte) (nalUnitOctet & 0x1F);
 
-			if (nalType >= NalFragmentType.NAL_UNIT.valueFrom && nalType <= NalFragmentType.NAL_UNIT.valueTo) {
+			if (nalType >= NalFragmentType.NAL_UNIT.getValueFrom() && nalType <= NalFragmentType.NAL_UNIT.getValueTo()) {
 				nalFragmentType = NalFragmentType.NAL_UNIT;
 				/*
 				if (nalType == 7) {
@@ -180,9 +121,9 @@ public class RtpPacket {
 					System.out.println("PPS: " + nalUnitOctet);
 				}
 				 */
-			} else if (nalType == NalFragmentType.FU_A.valueFrom) {
+			} else if (nalType == NalFragmentType.FU_A.getValueFrom()) {
 				nalFragmentType = NalFragmentType.FU_A;
-			} else if (nalType == NalFragmentType.STAP_A.valueFrom) {
+			} else if (nalType == NalFragmentType.STAP_A.getValueFrom()) {
 				nalFragmentType = NalFragmentType.STAP_A;
 			}
 
