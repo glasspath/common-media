@@ -72,6 +72,7 @@ import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
 import org.glasspath.common.media.video.Video;
 import org.glasspath.common.swing.file.chooser.FileChooser;
 import org.glasspath.common.swing.frame.FrameUtils;
+import org.glasspath.common.swing.theme.Theme;
 
 @SuppressWarnings("serial")
 public abstract class VideoPlayer implements IVideoPlayer {
@@ -185,6 +186,10 @@ public abstract class VideoPlayer implements IVideoPlayer {
 				exit();
 			}
 		});
+
+		if (Theme.isDark()) {
+			frame.getRootPane().setBackground(CONTROLS_BAR_BG_COLOR);
+		}
 
 		// TODO
 		// frame.getRootPane().setBackground(CONTROLS_BAR_BG_COLOR);
