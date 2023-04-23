@@ -142,6 +142,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
 				if (!inited) {
 
 					frame.toFront();
+
 					FrameUtils.loadExtendedState(frame, preferences);
 
 					frame.addComponentListener(new ComponentAdapter() {
@@ -173,7 +174,8 @@ public abstract class VideoPlayer implements IVideoPlayer {
 
 					updateLoopMenuItems();
 
-					frame.toFront();
+					frame.validate();
+					controlsBar.validate();
 
 					inited = true;
 
@@ -345,12 +347,13 @@ public abstract class VideoPlayer implements IVideoPlayer {
 	}
 
 	@Override
-	public Preferences getPreferences() {
-		return preferences;
-	}
-
 	public ControlsBar getControlsBar() {
 		return controlsBar;
+	}
+
+	@Override
+	public Preferences getPreferences() {
+		return preferences;
 	}
 
 	public boolean isExitOnClose() {

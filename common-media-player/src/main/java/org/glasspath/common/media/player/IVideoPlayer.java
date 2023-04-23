@@ -26,9 +26,13 @@ import java.util.prefs.Preferences;
 
 import javax.swing.JFrame;
 
+import org.glasspath.common.media.player.VideoPlayer.ControlsBar;
+
 public interface IVideoPlayer {
 
 	public JFrame getFrame();
+
+	public ControlsBar getControlsBar();
 
 	public Preferences getPreferences();
 
