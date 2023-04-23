@@ -30,7 +30,7 @@ public abstract class FrameBuffer<F> {
 	private final Thread decoderThread;
 	private final Thread converterThread;
 	private final Thread filterThread;
-
+	private Long seekTimestamp = null;
 	private boolean exit = false;
 
 	public FrameBuffer() {
@@ -54,13 +54,21 @@ public abstract class FrameBuffer<F> {
 					}
 
 					if (frame != null) {
+
+						if (seekTimestamp != null) {
+							setDecoderTimestamp(seekTimestamp.longValue());
+							seekTimestamp = null;
+						}
+
 						frame.source = decode();
+
 						if (frame.source != null) {
 							frame.setTimestamp(getDecoderTimestamp(frame.source));
 						} else {
 							System.err.println("Decode failed..");
 							frame.decodeFailed = true;
 						}
+
 					} else {
 						try {
 							Thread.sleep(1);
@@ -159,13 +167,17 @@ public abstract class FrameBuffer<F> {
 
 	protected abstract long getDecoderTimestamp(F source);
 
-	protected abstract void setDecoderTimestamp();
+	protected abstract void setDecoderTimestamp(long timestamp);
 
 	protected abstract F decode();
 
 	protected abstract BufferedImage convert(F source);
 
 	protected abstract void filter(BufferedImage image);
+
+	public void seek(long timestamp) {
+		seekTimestamp = timestamp;
+	}
 
 	public static class BufferedFrame<F> extends Frame {
 
