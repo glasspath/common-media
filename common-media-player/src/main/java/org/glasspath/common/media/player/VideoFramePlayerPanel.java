@@ -31,6 +31,7 @@ import javax.swing.SwingUtilities;
 
 import org.glasspath.common.media.video.Frame;
 import org.glasspath.common.media.video.Video;
+import org.glasspath.common.swing.SwingUtils;
 
 public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
@@ -68,28 +69,22 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 						break;
 
 					case KeyEvent.VK_LEFT:
-						previousFrame(e.isControlDown() ? STEP_FAST_FORWARD_REVERSE : 1);
+						previousFrame(SwingUtils.isControlOrCmdDown(e) ? STEP_FAST_FORWARD_REVERSE : 1);
 						break;
 
 					case KeyEvent.VK_RIGHT:
-						nextFrame(e.isControlDown() ? STEP_FAST_FORWARD_REVERSE : 1);
+						nextFrame(SwingUtils.isControlOrCmdDown(e) ? STEP_FAST_FORWARD_REVERSE : 1);
 						break;
 
 					case KeyEvent.VK_UP:
-						if (e.isControlDown()) {
+						if (SwingUtils.isControlOrCmdDown(e)) {
 							framePanel.zoomIn();
 						}
 						break;
 
 					case KeyEvent.VK_DOWN:
-						if (e.isControlDown()) {
+						if (SwingUtils.isControlOrCmdDown(e)) {
 							framePanel.zoomOut();
-						}
-						break;
-
-					case KeyEvent.VK_0:
-						if (e.isControlDown()) {
-							resetView();
 						}
 						break;
 

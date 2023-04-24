@@ -53,6 +53,7 @@ import javax.swing.event.MenuListener;
 
 import org.glasspath.common.icons.Icons;
 import org.glasspath.common.media.video.Frame;
+import org.glasspath.common.os.OsUtils;
 import org.glasspath.common.swing.SwingUtils;
 
 @SuppressWarnings("serial")
@@ -667,7 +668,7 @@ public class FramePanel extends JPanel {
 	public JMenuItem createResetViewMenuItem() {
 
 		JMenuItem resetViewMenuItem = new JMenuItem("Reset View");
-		resetViewMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_0, KeyEvent.CTRL_DOWN_MASK));
+		resetViewMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_0, OsUtils.CTRL_OR_CMD_MASK));
 		resetViewMenuItem.addActionListener(new ActionListener() {
 
 			@Override

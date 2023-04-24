@@ -70,6 +70,7 @@ import org.glasspath.common.icons.Icons;
 import org.glasspath.common.media.player.IVideoPlayerPanel.GifExportRequest;
 import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
 import org.glasspath.common.media.video.Video;
+import org.glasspath.common.os.OsUtils;
 import org.glasspath.common.swing.file.chooser.FileChooser;
 import org.glasspath.common.swing.frame.FrameUtils;
 import org.glasspath.common.swing.theme.Theme;
@@ -311,7 +312,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
 
 		JMenuItem resetViewMenuItem = new JMenuItem("Reset View");
 		viewMenu.add(resetViewMenuItem);
-		resetViewMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_0, KeyEvent.CTRL_DOWN_MASK));
+		resetViewMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_0, OsUtils.CTRL_OR_CMD_MASK));
 		resetViewMenuItem.addActionListener(new ActionListener() {
 
 			@Override
@@ -326,7 +327,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
 		JCheckBoxMenuItem overlayMenuItem = new JCheckBoxMenuItem("Show overlay");
 		viewMenu.add(overlayMenuItem);
 		overlayMenuItem.setSelected(FramePanel.TODO_TEST_OVERLAY);
-		overlayMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_9, KeyEvent.CTRL_DOWN_MASK));
+		overlayMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_9, OsUtils.CTRL_OR_CMD_MASK));
 		overlayMenuItem.addActionListener(new ActionListener() {
 
 			@Override
