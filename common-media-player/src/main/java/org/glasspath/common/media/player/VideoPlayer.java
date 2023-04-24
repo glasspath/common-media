@@ -193,9 +193,6 @@ public abstract class VideoPlayer implements IVideoPlayer {
 			frame.getRootPane().setBackground(CONTROLS_BAR_BG_COLOR);
 		}
 
-		// TODO
-		// frame.getRootPane().setBackground(CONTROLS_BAR_BG_COLOR);
-
 		FrameUtils.loadFrameDimensions(frame, preferences, false);
 
 		JMenuBar menuBar = new JMenuBar();
@@ -314,6 +311,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
 
 		JMenuItem resetViewMenuItem = new JMenuItem("Reset View");
 		viewMenu.add(resetViewMenuItem);
+		resetViewMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_0, KeyEvent.CTRL_DOWN_MASK));
 		resetViewMenuItem.addActionListener(new ActionListener() {
 
 			@Override
@@ -324,7 +322,24 @@ public abstract class VideoPlayer implements IVideoPlayer {
 			}
 		});
 
-		controlsBar = new ControlsBar();
+		// TODO
+		JCheckBoxMenuItem overlayMenuItem = new JCheckBoxMenuItem("Show overlay");
+		viewMenu.add(overlayMenuItem);
+		overlayMenuItem.setSelected(FramePanel.TODO_TEST_OVERLAY);
+		overlayMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_9, KeyEvent.CTRL_DOWN_MASK));
+		overlayMenuItem.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				FramePanel.TODO_TEST_OVERLAY = overlayMenuItem.isSelected();
+				if (videoPlayerPanel != null) {
+					videoPlayerPanel.getComponent().repaint();
+				}
+			}
+		});
+
+
+		controlsBar = new ControlsBar(this);
 		frame.getContentPane().add(controlsBar, BorderLayout.SOUTH);
 
 		updateLoopMenuItems();
@@ -344,6 +359,11 @@ public abstract class VideoPlayer implements IVideoPlayer {
 	@Override
 	public JFrame getFrame() {
 		return frame;
+	}
+
+	@Override
+	public IVideoPlayerPanel getVideoPlayerPanel() {
+		return videoPlayerPanel;
 	}
 
 	@Override
@@ -574,7 +594,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
 
 		private final GeneralPath gp = new GeneralPath();
 
-		public ControlsBar() {
+		public ControlsBar(IVideoPlayer context) {
 
 			// setDoubleBuffered(false);
 			setBackground(CONTROLS_BAR_BG_COLOR);
@@ -586,7 +606,7 @@ public abstract class VideoPlayer implements IVideoPlayer {
 			layout.columnWidths = new int[] { 15, 0, 5, 25, 5, 25, 5, 25, 5, 25, 5, 25, 5, 50, 10, 25, 15 };
 			setLayout(layout);
 
-			timelineBar = new VideoTimelineBar();
+			timelineBar = new VideoTimelineBar(context);
 			add(timelineBar, new GridBagConstraints(15, 2, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
 
 			final JButton fastReverseButton = new JButton() {
@@ -891,9 +911,12 @@ public abstract class VideoPlayer implements IVideoPlayer {
 
 	public class VideoTimelineBar extends JComponent {
 
+		private final IVideoPlayer context;
 		private int x, y, w, h;
 
-		public VideoTimelineBar() {
+		public VideoTimelineBar(IVideoPlayer context) {
+
+			this.context = context;
 
 			setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); // TODO
 			addMouseListener(new MouseAdapter() {
@@ -905,16 +928,15 @@ public abstract class VideoPlayer implements IVideoPlayer {
 						createMenu(e.getX()).getPopupMenu().show(VideoTimelineBar.this, e.getX(), e.getY());
 					} else {
 
-						if (videoPlayerPanel != null) {
+						if (context.getVideoPlayerPanel() != null) {
 
-							final boolean playing = videoPlayerPanel.isPlaying();
+							boolean playing = context.getVideoPlayerPanel().isPlaying();
 
 							if (playing) {
-								videoPlayerPanel.pause();
+								context.getVideoPlayerPanel().pause();
 							}
 
-							final long timestamp = getTimestampAtLocation(e.getX());
-							videoPlayerPanel.setTimestamp(timestamp, playing);
+							context.getVideoPlayerPanel().setTimestamp(getTimestampAtLocation(e.getX()), playing);
 
 						}
 
@@ -926,8 +948,8 @@ public abstract class VideoPlayer implements IVideoPlayer {
 		}
 
 		private long getTimestampAtLocation(int x) {
-			if (videoPlayerPanel != null) {
-				return (long) (((double) x / (double) getWidth()) * (double) videoPlayerPanel.getDuration());
+			if (context.getVideoPlayerPanel() != null) {
+				return (long) (((double) x / (double) getWidth()) * (double) context.getVideoPlayerPanel().getDuration());
 			} else {
 				return -1;
 			}

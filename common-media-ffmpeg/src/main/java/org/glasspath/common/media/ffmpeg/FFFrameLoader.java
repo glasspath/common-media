@@ -37,12 +37,18 @@ public class FFFrameLoader extends FrameLoader {
 
 	public static boolean TODO_DEBUG = false;
 
+	static {
+		if (!TODO_DEBUG) {
+			org.bytedeco.ffmpeg.global.avutil.av_log_set_level(org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR);
+		}
+	}
+
 	private final FFVideoFrameConverter frameConverter;
 	private FFmpegFrameGrabber frameGrabber = null;
 	private boolean fileOpen = false;
 
 	public FFFrameLoader() {
-		frameConverter = new FFVideoFrameConverter();
+		frameConverter = new FFVideoFrameConverter(false); // TODO? (we are setting width/height on frame grabber, this causes optimized converter to fail..)
 	}
 
 	@Override
@@ -118,6 +124,7 @@ public class FFFrameLoader extends FrameLoader {
 
 			try {
 
+				// TODO? (Setting width/height causes optimized converter to fail..)
 				frameGrabber.setImageWidth(width);
 				frameGrabber.setImageHeight(height);
 
@@ -159,6 +166,7 @@ public class FFFrameLoader extends FrameLoader {
 		}
 
 		return false;
+
 	}
 
 	@Override
@@ -253,7 +261,7 @@ public class FFFrameLoader extends FrameLoader {
 							/*
 							frameGrabber.setVideoTimestamp(timestamp * 1000);
 							org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
-							*/
+							 */
 							org.bytedeco.javacv.Frame frame = grabFrame(frameGrabber, timestamp);
 
 							if (frame == null) {

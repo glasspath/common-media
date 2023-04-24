@@ -467,13 +467,13 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 	}
 
 	@Override
-	public void setLoop(Loop loop) {
-		this.loop = loop;
+	public Loop getLoop() {
+		return loop;
 	}
 
 	@Override
-	public Loop getLoop() {
-		return loop;
+	public void setLoop(Loop loop) {
+		this.loop = loop;
 	}
 
 	@Override

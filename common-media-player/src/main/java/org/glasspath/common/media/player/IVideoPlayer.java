@@ -32,6 +32,8 @@ public interface IVideoPlayer {
 
 	public JFrame getFrame();
 
+	public IVideoPlayerPanel getVideoPlayerPanel();
+
 	public ControlsBar getControlsBar();
 
 	public Preferences getPreferences();

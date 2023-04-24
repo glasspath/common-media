@@ -28,6 +28,8 @@ import java.util.List;
 
 public class DefaultVideo extends Video {
 
+	public static boolean TODO_DEBUG = false;
+
 	private final FrameLoader frameLoader;
 	private int width = Resolution.HD_720P.getWidth();
 	private int height = Resolution.HD_720P.getHeight();
@@ -239,7 +241,9 @@ public class DefaultVideo extends Video {
 
 		}
 
-		System.err.println("TODO: Parse date with format: " + dateTimeString);
+		if (TODO_DEBUG) {
+			System.err.println("TODO: Parse date with format: " + dateTimeString);
+		}
 
 		return null;
 

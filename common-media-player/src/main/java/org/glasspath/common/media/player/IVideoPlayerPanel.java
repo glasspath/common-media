@@ -54,9 +54,9 @@ public interface IVideoPlayerPanel {
 
 	public long getDuration();
 
-	public void setLoop(Loop loop);
-
 	public Loop getLoop();
+
+	public void setLoop(Loop loop);
 
 	public void exportLoopToGif(GifExportRequest request);
 

@@ -26,7 +26,10 @@ import java.awt.image.BufferedImage;
 
 public abstract class FrameBuffer<F> {
 
-	private BufferedFrame<F>[] frames;
+	private BufferedFrame<F>[] buffer;
+	private final Decoder decoder;
+	private final Converter converter;
+	private final Filter filter;
 	private final Thread decoderThread;
 	private final Thread converterThread;
 	private final Thread filterThread;
@@ -34,123 +37,13 @@ public abstract class FrameBuffer<F> {
 	private boolean exit = false;
 
 	public FrameBuffer() {
-
-		frames = createBuffer();
-
-		decoderThread = new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-
-				while (!exit) {
-
-					BufferedFrame<F> frame = null;
-
-					for (BufferedFrame<F> f : frames) {
-						if (f.source == null && !f.decodeFailed) {
-							frame = f;
-							break;
-						}
-					}
-
-					if (frame != null) {
-
-						if (seekTimestamp != null) {
-							setDecoderTimestamp(seekTimestamp.longValue());
-							seekTimestamp = null;
-						}
-
-						frame.source = decode();
-
-						if (frame.source != null) {
-							frame.setTimestamp(getDecoderTimestamp(frame.source));
-						} else {
-							System.err.println("Decode failed..");
-							frame.decodeFailed = true;
-						}
-
-					} else {
-						try {
-							Thread.sleep(1);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-					}
-
-				}
-
-			}
-		});
-
-		converterThread = new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-
-				while (!exit) {
-
-					BufferedFrame<F> frame = null;
-
-					for (BufferedFrame<F> f : frames) {
-						if (f.source != null && f.getImage() == null) {
-							frame = f;
-							break;
-						}
-					}
-
-					if (frame != null) {
-
-						frame.filtered = false;
-						frame.setImage(convert(frame.source));
-						frame.getImage().setAccelerationPriority(1.0F);
-
-						frame.source = null;
-
-					} else {
-						try {
-							Thread.sleep(1);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-					}
-
-				}
-
-			}
-		});
-
-		filterThread = new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-
-				while (!exit) {
-
-					BufferedFrame<F> frame = null;
-
-					for (BufferedFrame<F> f : frames) {
-						if (f.getImage() != null && !f.filtered) {
-							frame = f;
-							break;
-						}
-					}
-
-					if (frame != null) {
-						filter(frame.getImage());
-						frame.filtered = true;
-					} else {
-						try {
-							Thread.sleep(1);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-					}
-
-				}
-
-			}
-		});
-
+		buffer = createBuffer();
+		decoder = new Decoder();
+		converter = new Converter();
+		filter = new Filter();
+		decoderThread = new Thread(decoder);
+		converterThread = new Thread(converter);
+		filterThread = new Thread(filter);
 	}
 
 	public void start() {
@@ -159,11 +52,45 @@ public abstract class FrameBuffer<F> {
 		filterThread.start();
 	}
 
+	public void reset() {
+
+		decoder.reset = true;
+		converter.reset = true;
+		filter.reset = true;
+
+		while (!decoder.resetPerformed || !converter.resetPerformed || !filter.resetPerformed) {
+			try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+
+		for (BufferedFrame<F> frame : buffer) {
+			frame.reset();
+		}
+
+	}
+
+	public void resume() {
+
+		decoder.reset = false;
+		converter.reset = false;
+		filter.reset = false;
+
+	}
+
 	public void exit() {
 		exit = true;
 	}
 
+	public boolean isExited() {
+		return exit && true; // TODO?
+	}
+
 	protected abstract BufferedFrame<F>[] createBuffer();
+
+	protected abstract boolean createDecoder();
 
 	protected abstract long getDecoderTimestamp(F source);
 
@@ -175,33 +102,210 @@ public abstract class FrameBuffer<F> {
 
 	protected abstract void filter(BufferedImage image);
 
+	protected abstract void closeDecoder();
+
 	public void seek(long timestamp) {
 		seekTimestamp = timestamp;
 	}
 
-	public static class BufferedFrame<F> extends Frame {
+	protected class Decoder extends Worker {
 
-		private F source = null;
-		private boolean decodeFailed = false;
-		private boolean filtered = false;
+		protected Decoder() {
+
+		}
+
+		@Override
+		public void run() {
+
+			if (createDecoder()) {
+
+				try {
+
+					while (!exit) {
+
+						handleReset();
+
+						if (buffer[i].state == BufferedFrame.CLEARED) {
+
+							if (seekTimestamp != null) {
+								setDecoderTimestamp(seekTimestamp.longValue());
+								seekTimestamp = null;
+							}
+
+							buffer[i].source = decode();
+
+							// TODO: Check if we are at the end of the video?
+							if (buffer[i].source == null) {
+								setDecoderTimestamp(0);
+								buffer[i].source = decode();
+							}
+
+							if (buffer[i].source != null) {
+								buffer[i].setTimestamp(getDecoderTimestamp(buffer[i].source));
+								buffer[i].state = BufferedFrame.DECODED;
+							} else {
+								System.err.println("Decode failed..");
+								buffer[i].state = BufferedFrame.DECODE_FAILED;
+							}
+
+							i++;
+							if (i >= buffer.length) {
+								i = 0;
+							}
+
+						} else {
+							Thread.sleep(1);
+						}
+
+					}
+
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				closeDecoder();
+
+			}
+
+		}
+
+	}
+
+	protected class Converter extends Worker {
+
+		protected Converter() {
+
+		}
+
+		@Override
+		public void run() {
+
+			try {
+
+				while (!exit) {
+
+					handleReset();
+
+					if (buffer[i].state == BufferedFrame.DECODED) {
+
+						buffer[i].setImage(convert(buffer[i].source));
+						buffer[i].getImage().setAccelerationPriority(1.0F);
+
+						buffer[i].source = null;
+						buffer[i].state = BufferedFrame.CONVERTED;
+
+						i++;
+						if (i >= buffer.length) {
+							i = 0;
+						}
+
+					} else {
+						Thread.sleep(1);
+					}
+
+				}
+
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+		}
+
+	}
+
+	protected class Filter extends Worker {
+
+		protected Filter() {
+
+		}
+
+		@Override
+		public void run() {
+
+			try {
+
+				while (!exit) {
+
+					handleReset();
+
+					if (buffer[i].state == BufferedFrame.CONVERTED) {
+
+						filter(buffer[i].getImage());
+						buffer[i].state = BufferedFrame.FILTERED;
+
+						i++;
+						if (i >= buffer.length) {
+							i = 0;
+						}
+
+					} else {
+						Thread.sleep(1);
+					}
+
+				}
+
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+		}
+
+	}
+
+	protected abstract class Worker implements Runnable {
+
+		protected int i = 0;
+		protected boolean reset = false;
+		protected boolean resetPerformed = false;
+
+		protected Worker() {
+
+		}
+
+		protected void handleReset() throws InterruptedException {
+
+			if (reset) {
+
+				i = 0;
+
+				resetPerformed = true;
+
+				while (reset) {
+					Thread.sleep(1);
+				}
+
+				resetPerformed = false;
+
+			}
+
+		}
+
+	}
+
+	public static abstract class BufferedFrame<F> extends Frame {
+
+		public static final int CLEARED = 0;
+		public static final int DECODED = 1;
+		public static final int CONVERTED = 2;
+		public static final int FILTERED = 3;
+		public static final int DECODE_FAILED = -1;
+
+		protected F source = null;
+		protected int state = CLEARED;
 
 		public BufferedFrame() {
 
 		}
 
-		public boolean isReady() {
-			return getTimestamp() != null && getImage() != null && filtered;
+		public boolean isImageReady() {
+			return state == FILTERED;
 		}
 
 		public void reset() {
-
-			// source = null;
-			// decodeFailed = false;
-
+			source = null;
 			setImage(null);
 			setTimestamp(0);
-			filtered = false;
-
+			state = CLEARED;
 		}
 
 	}

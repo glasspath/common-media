@@ -22,6 +22,7 @@
  */
 package org.glasspath.common.media.player;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics;
@@ -30,9 +31,11 @@ import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.prefs.Preferences;
 
@@ -43,16 +46,21 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
+import org.glasspath.common.icons.Icons;
 import org.glasspath.common.media.video.Frame;
+import org.glasspath.common.swing.SwingUtils;
 
 @SuppressWarnings("serial")
 public class FramePanel extends JPanel {
 
 	public static boolean TODO_DEBUG = false;
+
+	public static boolean TODO_TEST_OVERLAY = true;
 
 	public static final double MIN_SCALE = 0.1;
 	public static final double MAX_SCALE = 25.0;
@@ -278,6 +286,20 @@ public class FramePanel extends JPanel {
 
 	}
 
+	public void resetView() {
+
+		customScale = null;
+		translateX = 0;
+		translateY = 0;
+		rotate = null;
+		flipHorizontal = false;
+		flipVertical = false;
+		scaleInited = false;
+
+		repaint();
+
+	}
+
 	@Override
 	public void paint(Graphics g) {
 		// super.paint(g);
@@ -334,6 +356,25 @@ public class FramePanel extends JPanel {
 
 			g2d.drawImage(image, x, y, null);
 
+			if (TODO_TEST_OVERLAY) {
+
+				g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+				g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+				g2d.setColor(new Color(0, 0, 0, 75));
+				g2d.fill(new RoundRectangle2D.Double(x + 50, y + 50, 500, 500, 15, 15));
+				g2d.setColor(Color.white);
+				g2d.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, new float[] { 10.0F, 4.0F }, 0.0f));
+				g2d.draw(new RoundRectangle2D.Double(x + 50, y + 50, 500, 500, 15, 15));
+
+				g2d.setFont(g2d.getFont().deriveFont(35.0F));
+				g2d.setStroke(new BasicStroke(2.0f));
+				SwingUtils.drawString(this, g2d, "Video Player overlay test", x + 100, y + 125);
+
+				Icons.contentCopyXLarge.paintIcon(this, g2d, x + 100, y + 175);
+
+			}
+
 			// g2d.scale(1.0 / scale, 1.0 / scale);
 			// g2d.translate(-translateX, -translateY);
 			// g2d.translate(-(w / 2), -(h / 2));
@@ -384,7 +425,7 @@ public class FramePanel extends JPanel {
 
 	public JMenuItem createAlwaysOnTopMenuItem() {
 
-		final JCheckBoxMenuItem alwaysOnTopMenuItem = new JCheckBoxMenuItem("Always on Top");
+		JCheckBoxMenuItem alwaysOnTopMenuItem = new JCheckBoxMenuItem("Always on Top");
 		alwaysOnTopMenuItem.setSelected(preferences.getBoolean("alwaysOnTop", false));
 		alwaysOnTopMenuItem.addActionListener(new ActionListener() {
 
@@ -625,22 +666,13 @@ public class FramePanel extends JPanel {
 
 	public JMenuItem createResetViewMenuItem() {
 
-		final JMenuItem resetViewMenuItem = new JMenuItem("Reset View");
+		JMenuItem resetViewMenuItem = new JMenuItem("Reset View");
+		resetViewMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_0, KeyEvent.CTRL_DOWN_MASK));
 		resetViewMenuItem.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-
-				customScale = null;
-				translateX = 0;
-				translateY = 0;
-				rotate = null;
-				flipHorizontal = false;
-				flipVertical = false;
-				scaleInited = false;
-
-				repaint();
-
+				resetView();
 			}
 		});
 
