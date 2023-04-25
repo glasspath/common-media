@@ -62,7 +62,6 @@ public class FFVideoPlayer extends VideoPlayer {
 
 	public static void main(String[] args) {
 
-		System.setProperty("sun.awt.noerasebackground", "true");
 		JPopupMenu.setDefaultLightWeightPopupEnabled(false);
 
 		Theme.load(Theme.THEME_DARK.getId());
@@ -82,7 +81,8 @@ public class FFVideoPlayer extends VideoPlayer {
 
 					if (args.length == 1) {
 
-						new FFVideoPlayer(args[0]);
+						// new FFVideoPlayer(args[0]);
+						new FFVideoPlayer(loadFromPath(args[0]), true, false, 0); // TODO!
 
 					} else if (args.length == 2) {
 

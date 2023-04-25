@@ -96,7 +96,7 @@ public class FramePanel extends JPanel {
 		this.parentFrame = parentFrame;
 		this.preferences = preferences;
 
-		final MouseAdapter mouseListener = new MouseAdapter() {
+		MouseAdapter mouseListener = new MouseAdapter() {
 
 			private Point mouseDragStart = null;
 			private int translateXStart = 0;
@@ -403,7 +403,7 @@ public class FramePanel extends JPanel {
 
 	public JMenu createMenu() {
 
-		final JMenu menu = prepareMenu();
+		JMenu menu = prepareMenu();
 
 		if (parentFrame != null && preferences != null) {
 			menu.add(createAlwaysOnTopMenuItem());
@@ -444,47 +444,47 @@ public class FramePanel extends JPanel {
 
 	public JMenu createZoomMenu() {
 
-		final JMenu zoomMenu = new JMenu("Zoom");
+		JMenu zoomMenu = new JMenu("Zoom");
 
-		final ButtonGroup buttonGroup = new ButtonGroup();
+		ButtonGroup buttonGroup = new ButtonGroup();
 
-		final JRadioButtonMenuItem automaticMenuItem = new JRadioButtonMenuItem("Automatic");
+		JRadioButtonMenuItem automaticMenuItem = new JRadioButtonMenuItem("Automatic");
 		buttonGroup.add(automaticMenuItem);
 		zoomMenu.add(automaticMenuItem);
 
-		final JRadioButtonMenuItem percentage25MenuItem = new JRadioButtonMenuItem("25%");
+		JRadioButtonMenuItem percentage25MenuItem = new JRadioButtonMenuItem("25%");
 		buttonGroup.add(percentage25MenuItem);
 		zoomMenu.add(percentage25MenuItem);
 
-		final JRadioButtonMenuItem percentage50MenuItem = new JRadioButtonMenuItem("50%");
+		JRadioButtonMenuItem percentage50MenuItem = new JRadioButtonMenuItem("50%");
 		buttonGroup.add(percentage50MenuItem);
 		zoomMenu.add(percentage50MenuItem);
 
-		final JRadioButtonMenuItem percentage75MenuItem = new JRadioButtonMenuItem("75%");
+		JRadioButtonMenuItem percentage75MenuItem = new JRadioButtonMenuItem("75%");
 		buttonGroup.add(percentage75MenuItem);
 		zoomMenu.add(percentage75MenuItem);
 
-		final JRadioButtonMenuItem percentage100MenuItem = new JRadioButtonMenuItem("100%");
+		JRadioButtonMenuItem percentage100MenuItem = new JRadioButtonMenuItem("100%");
 		buttonGroup.add(percentage100MenuItem);
 		zoomMenu.add(percentage100MenuItem);
 
-		final JRadioButtonMenuItem percentage125MenuItem = new JRadioButtonMenuItem("125%");
+		JRadioButtonMenuItem percentage125MenuItem = new JRadioButtonMenuItem("125%");
 		buttonGroup.add(percentage125MenuItem);
 		zoomMenu.add(percentage125MenuItem);
 
-		final JRadioButtonMenuItem percentage150MenuItem = new JRadioButtonMenuItem("150%");
+		JRadioButtonMenuItem percentage150MenuItem = new JRadioButtonMenuItem("150%");
 		buttonGroup.add(percentage150MenuItem);
 		zoomMenu.add(percentage150MenuItem);
 
-		final JRadioButtonMenuItem percentage175MenuItem = new JRadioButtonMenuItem("175%");
+		JRadioButtonMenuItem percentage175MenuItem = new JRadioButtonMenuItem("175%");
 		buttonGroup.add(percentage175MenuItem);
 		zoomMenu.add(percentage175MenuItem);
 
-		final JRadioButtonMenuItem percentage200MenuItem = new JRadioButtonMenuItem("200%");
+		JRadioButtonMenuItem percentage200MenuItem = new JRadioButtonMenuItem("200%");
 		buttonGroup.add(percentage200MenuItem);
 		zoomMenu.add(percentage200MenuItem);
 
-		final class CustomScaleUpdater {
+		class CustomScaleUpdater {
 
 			private boolean updating = false;
 
@@ -515,7 +515,7 @@ public class FramePanel extends JPanel {
 
 			}
 		}
-		final CustomScaleUpdater customScaleUpdater = new CustomScaleUpdater();
+		CustomScaleUpdater customScaleUpdater = new CustomScaleUpdater();
 
 		automaticMenuItem.addActionListener(new ActionListener() {
 
@@ -605,9 +605,9 @@ public class FramePanel extends JPanel {
 
 	public JMenu createRotateMenu() {
 
-		final JMenu rotateMenu = new JMenu("Rotate");
+		JMenu rotateMenu = new JMenu("Rotate");
 
-		final JMenuItem rotateLeftMenuItem = new JMenuItem("90° Left");
+		JMenuItem rotateLeftMenuItem = new JMenuItem("90° Left");
 		rotateMenu.add(rotateLeftMenuItem);
 		rotateLeftMenuItem.addActionListener(new ActionListener() {
 
@@ -617,7 +617,7 @@ public class FramePanel extends JPanel {
 			}
 		});
 
-		final JMenuItem rotateRightMenuItem = new JMenuItem("90° Right");
+		JMenuItem rotateRightMenuItem = new JMenuItem("90° Right");
 		rotateMenu.add(rotateRightMenuItem);
 		rotateRightMenuItem.addActionListener(new ActionListener() {
 
@@ -633,9 +633,9 @@ public class FramePanel extends JPanel {
 
 	public JMenu createFlipMenu() {
 
-		final JMenu flipMenu = new JMenu("Flip");
+		JMenu flipMenu = new JMenu("Flip");
 
-		final JCheckBoxMenuItem flipHorizontalMenuItem = new JCheckBoxMenuItem("Horizontal");
+		JCheckBoxMenuItem flipHorizontalMenuItem = new JCheckBoxMenuItem("Horizontal");
 		flipHorizontalMenuItem.setSelected(flipHorizontal);
 		flipMenu.add(flipHorizontalMenuItem);
 		flipHorizontalMenuItem.addActionListener(new ActionListener() {
@@ -648,7 +648,7 @@ public class FramePanel extends JPanel {
 			}
 		});
 
-		final JCheckBoxMenuItem flipVerticalMenuItem = new JCheckBoxMenuItem("Vertical");
+		JCheckBoxMenuItem flipVerticalMenuItem = new JCheckBoxMenuItem("Vertical");
 		flipVerticalMenuItem.setSelected(flipVertical);
 		flipMenu.add(flipVerticalMenuItem);
 		flipVerticalMenuItem.addActionListener(new ActionListener() {
