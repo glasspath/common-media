@@ -22,36 +22,14 @@
  */
 package org.glasspath.common.media.player;
 
-import java.util.prefs.Preferences;
+public interface ILoopHandler {
 
-import org.glasspath.common.swing.FrameContext;
+	public void setLoopFrom(long timestamp);
 
-public interface IVideoPlayer extends FrameContext {
+	public void setLoopTo(long timestamp);
 
-	public IVideoPlayerPanel getVideoPlayerPanel();
+	public void clearLoopMarkers();
 
-	public ControlsBar getControlsBar();
-
-	public Preferences getPreferences();
-
-	public void fireVideoOpened(String path);
-
-	public void fireVideoClosed(String path);
-
-	public void fireTimestampChanged(long timestamp);
-
-	public void firePlaybackEnded();
-
-	public void fireVideoPlayerClosed();
-
-	public ILoopHandler getLoopHandler();
-
-	public void updateControls();
-
-	public int getRate();
-
-	public void repaintTimelineBar();
-
-	public void exit();
+	public void exportLoopToGif();
 
 }

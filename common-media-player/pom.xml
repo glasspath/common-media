@@ -13,7 +13,7 @@
 
 		<dependency>
 			<groupId>org.glasspath.common</groupId>
-			<artifactId>common-media-core</artifactId>
+			<artifactId>common-media-recorder</artifactId>
 			<version>${revision}</version>
 		</dependency>
 		<dependency>

@@ -41,12 +41,12 @@ import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.Timer;
 
+import org.glasspath.common.media.image.GifExporter;
 import org.glasspath.common.media.mfsdk.EvrCanvas;
 import org.glasspath.common.media.mfsdk.EvrCanvas.PlayerInstanceState;
 import org.glasspath.common.media.mfsdk.EvrCanvasPanel;
 import org.glasspath.common.media.mfsdk.FrameGenerator;
 import org.glasspath.common.media.mfsdk.MFUtils;
-import org.glasspath.common.media.player.GifExporter;
 import org.glasspath.common.media.player.IVideoPlayer;
 import org.glasspath.common.media.player.IVideoPlayerPanel;
 import org.glasspath.common.media.video.Video;

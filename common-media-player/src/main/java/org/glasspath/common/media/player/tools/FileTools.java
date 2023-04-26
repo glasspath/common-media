@@ -20,38 +20,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package org.glasspath.common.media.player;
+package org.glasspath.common.media.player.tools;
 
-import java.util.prefs.Preferences;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-import org.glasspath.common.swing.FrameContext;
+import javax.swing.JMenuItem;
 
-public interface IVideoPlayer extends FrameContext {
+import org.glasspath.common.media.player.IVideoPlayer;
+import org.glasspath.common.swing.tools.AbstractTools;
 
-	public IVideoPlayerPanel getVideoPlayerPanel();
+public class FileTools extends AbstractTools<IVideoPlayer> {
 
-	public ControlsBar getControlsBar();
+	public FileTools(IVideoPlayer context) {
+		super(context, "File");
 
-	public Preferences getPreferences();
+		JMenuItem exitMenuItem = new JMenuItem("Exit");
+		menu.add(exitMenuItem);
+		exitMenuItem.addActionListener(new ActionListener() {
 
-	public void fireVideoOpened(String path);
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				context.exit();
+			}
+		});
 
-	public void fireVideoClosed(String path);
-
-	public void fireTimestampChanged(long timestamp);
-
-	public void firePlaybackEnded();
-
-	public void fireVideoPlayerClosed();
-
-	public ILoopHandler getLoopHandler();
-
-	public void updateControls();
-
-	public int getRate();
-
-	public void repaintTimelineBar();
-
-	public void exit();
+	}
 
 }
