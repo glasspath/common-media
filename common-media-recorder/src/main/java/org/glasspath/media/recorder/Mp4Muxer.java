@@ -23,17 +23,27 @@
 package org.glasspath.media.recorder;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.UUID;
 
+import org.jcodec.common.io.NIOUtils;
 import org.jcodec.common.io.SeekableByteChannel;
 import org.jcodec.containers.mp4.Brand;
+import org.jcodec.containers.mp4.MP4Util;
 import org.jcodec.containers.mp4.boxes.Box;
+import org.jcodec.containers.mp4.boxes.DataBox;
 import org.jcodec.containers.mp4.boxes.FileTypeBox;
 import org.jcodec.containers.mp4.boxes.MovieBox;
 import org.jcodec.containers.mp4.boxes.MovieHeaderBox;
+import org.jcodec.containers.mp4.boxes.NameBox;
+import org.jcodec.containers.mp4.boxes.UdtaBox;
 import org.jcodec.containers.mp4.muxer.MP4Muxer;
 
 public class Mp4Muxer extends MP4Muxer {
+
+	public static boolean TODO_TEST_UDTA_DATA_BOX = false;
+	public static boolean TODO_TEST_UUID_BOX = true;
 
 	private long created = System.currentTimeMillis();
 
@@ -68,6 +78,22 @@ public class Mp4Muxer extends MP4Muxer {
 					boxes.remove(0);
 					boxes.add(0, movieHeaderBox);
 
+					if (TODO_TEST_UDTA_DATA_BOX) {
+
+						UdtaBox udtaBox = UdtaBox.createUdtaBox();
+						boxes.add(udtaBox);
+
+						udtaBox.add(NameBox.createNameBox("This is a test"));
+
+						int dataLength = 1024 * 4;
+						byte[] dataBytes = new byte[dataLength];
+						dataBytes[0] = 123;
+						dataBytes[dataLength - 1] = 124;
+
+						udtaBox.add(DataBox.createDataBox(0, 0, dataBytes));
+
+					}
+
 				}
 
 			}
@@ -75,6 +101,38 @@ public class Mp4Muxer extends MP4Muxer {
 		}
 
 		return movie;
+
+	}
+
+	@Override
+	public void storeHeader(MovieBox movie) throws IOException {
+
+		long mdatSize = out.position() - mdatOffset + 8;
+		MP4Util.writeMovie(out, movie);
+
+		if (TODO_TEST_UUID_BOX) {
+
+			// UUID uuid = UUID.randomUUID();
+			UUID uuid = UUID.fromString("40279e33-acf7-470a-be18-d2b4290e930b");
+
+			int dataLength = 1024 * 4;
+			byte[] dataBytes = new byte[dataLength];
+			dataBytes[0] = 123;
+			dataBytes[dataLength - 1] = 124;
+
+			UUIDBox uuidBox = UUIDBox.createUUIDBox(uuid, dataBytes);
+
+			int sizeHint = uuidBox.estimateSize() + (4 << 10);
+
+			ByteBuffer buf = ByteBuffer.allocate(sizeHint * 4);
+			uuidBox.write(buf);
+			buf.flip();
+			out.write(buf);
+
+		}
+
+		out.setPosition(mdatOffset);
+		NIOUtils.writeLong(out, mdatSize);
 
 	}
 
