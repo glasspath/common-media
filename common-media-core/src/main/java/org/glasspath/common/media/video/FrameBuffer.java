@@ -23,47 +23,124 @@
 package org.glasspath.common.media.video;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class FrameBuffer<F> {
 
 	private BufferedFrame<F>[] buffer;
-	private final Decoder decoder;
-	private final Converter converter;
-	private final Filter filter;
-	private final Thread decoderThread;
-	private final Thread converterThread;
-	private final Thread filterThread;
+	private final Thread[] threads;
+	private final List<Decoder> decoders;
+	private final List<Converter> converters;
+	private final List<Filter> filters;
 	private Long seekTimestamp = null;
 	private boolean exit = false;
 
 	public FrameBuffer() {
+		this(1, 1, 1);
+	}
+
+	public FrameBuffer(int decoderThreads, int converterThreads, int filterThreads) {
+
 		buffer = createBuffer();
-		decoder = new Decoder();
-		converter = new Converter();
-		filter = new Filter();
-		decoderThread = new Thread(decoder);
-		converterThread = new Thread(converter);
-		filterThread = new Thread(filter);
+
+		threads = new Thread[decoderThreads + converterThreads + filterThreads];
+
+		decoders = new ArrayList<>();
+		for (int i = 0; i < decoderThreads; i++) {
+
+			Decoder decoder = new Decoder(decoderThreads, i);
+
+			decoders.add(decoder);
+			threads[i] = new Thread(decoder);
+
+		}
+
+		converters = new ArrayList<>();
+		for (int i = 0; i < converterThreads; i++) {
+
+			Converter converter = new Converter(converterThreads, i);
+
+			converters.add(converter);
+			threads[i + decoderThreads] = new Thread(converter);
+
+		}
+
+		filters = new ArrayList<>();
+		for (int i = 0; i < filterThreads; i++) {
+
+			Filter filter = new Filter(filterThreads, i);
+
+			filters.add(filter);
+			threads[i + decoderThreads + converterThreads] = new Thread(filter);
+
+		}
+
 	}
 
 	public void start() {
-		decoderThread.start();
-		converterThread.start();
-		filterThread.start();
+		for (Thread thread : threads) {
+			thread.start();
+		}
 	}
 
 	public void reset() {
 
-		decoder.reset = true;
-		converter.reset = true;
-		filter.reset = true;
+		for (Decoder decoder : decoders) {
+			decoder.reset = true;
+		}
 
-		while (!decoder.resetPerformed || !converter.resetPerformed || !filter.resetPerformed) {
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+		for (Converter converter : converters) {
+			converter.reset = true;
+		}
+
+		for (Filter filter : filters) {
+			filter.reset = true;
+		}
+
+		while (true) {
+
+			boolean resetPerformed = true;
+
+			for (Decoder decoder : decoders) {
+				if (!decoder.resetPerformed) {
+					resetPerformed = false;
+					break;
+				}
 			}
+
+			if (resetPerformed) {
+
+				for (Converter converter : converters) {
+					if (!converter.resetPerformed) {
+						resetPerformed = false;
+						break;
+					}
+				}
+
+				if (resetPerformed) {
+
+					for (Filter filter : filters) {
+						if (!filter.resetPerformed) {
+							resetPerformed = false;
+							break;
+						}
+					}
+
+				}
+
+			}
+
+			if (resetPerformed) {
+				break;
+			} else {
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+
 		}
 
 		for (BufferedFrame<F> frame : buffer) {
@@ -74,9 +151,17 @@ public abstract class FrameBuffer<F> {
 
 	public void resume() {
 
-		decoder.reset = false;
-		converter.reset = false;
-		filter.reset = false;
+		for (Decoder decoder : decoders) {
+			decoder.reset = false;
+		}
+
+		for (Converter converter : converters) {
+			converter.reset = false;
+		}
+
+		for (Filter filter : filters) {
+			filter.reset = false;
+		}
 
 	}
 
@@ -110,8 +195,8 @@ public abstract class FrameBuffer<F> {
 
 	protected class Decoder extends Worker {
 
-		protected Decoder() {
-
+		protected Decoder(int workerCount, int workerIndex) {
+			super(workerCount, workerIndex);
 		}
 
 		@Override
@@ -142,10 +227,7 @@ public abstract class FrameBuffer<F> {
 								buffer[i].state = BufferedFrame.DECODE_FAILED;
 							}
 
-							i++;
-							if (i >= buffer.length) {
-								i = 0;
-							}
+							next();
 
 						} else {
 							Thread.sleep(1);
@@ -167,8 +249,8 @@ public abstract class FrameBuffer<F> {
 
 	protected class Converter extends Worker {
 
-		protected Converter() {
-
+		protected Converter(int workerCount, int workerIndex) {
+			super(workerCount, workerIndex);
 		}
 
 		@Override
@@ -188,10 +270,7 @@ public abstract class FrameBuffer<F> {
 						buffer[i].source = null;
 						buffer[i].state = BufferedFrame.CONVERTED;
 
-						i++;
-						if (i >= buffer.length) {
-							i = 0;
-						}
+						next();
 
 					} else {
 						Thread.sleep(1);
@@ -209,8 +288,8 @@ public abstract class FrameBuffer<F> {
 
 	protected class Filter extends Worker {
 
-		protected Filter() {
-
+		protected Filter(int workerCount, int workerIndex) {
+			super(workerCount, workerIndex);
 		}
 
 		@Override
@@ -227,10 +306,7 @@ public abstract class FrameBuffer<F> {
 						filter(buffer[i].getImage());
 						buffer[i].state = BufferedFrame.FILTERED;
 
-						i++;
-						if (i >= buffer.length) {
-							i = 0;
-						}
+						next();
 
 					} else {
 						Thread.sleep(1);
@@ -248,19 +324,23 @@ public abstract class FrameBuffer<F> {
 
 	protected abstract class Worker implements Runnable {
 
+		protected final int workerCount;
+		protected final int workerIndex;
 		protected int i = 0;
 		protected boolean reset = false;
 		protected boolean resetPerformed = false;
 
-		protected Worker() {
-
+		protected Worker(int workerCount, int workerIndex) {
+			this.workerCount = workerCount;
+			this.workerIndex = workerIndex;
+			this.i = workerIndex;
 		}
 
 		protected void handleReset() throws InterruptedException {
 
 			if (reset) {
 
-				i = 0;
+				i = workerIndex;
 
 				resetPerformed = true;
 
@@ -272,6 +352,13 @@ public abstract class FrameBuffer<F> {
 
 			}
 
+		}
+
+		protected void next() {
+			i += workerCount;
+			if (i >= buffer.length) {
+				i = workerIndex;
+			}
 		}
 
 	}

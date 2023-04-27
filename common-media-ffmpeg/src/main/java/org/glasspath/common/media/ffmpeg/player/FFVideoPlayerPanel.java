@@ -60,7 +60,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	public FFVideoPlayerPanel(IVideoPlayer context, Video video) {
 		super(context, video);
 
-		buffer = new FFBufferedFrame[10];
+		buffer = new FFBufferedFrame[25];
 		for (int i = 0; i < buffer.length; i++) {
 			buffer[i] = new FFBufferedFrame();
 		}
@@ -105,16 +105,19 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 				// frameGrabber.setImageScalingFlags(org.bytedeco.ffmpeg.global.swscale.SWS_FAST_BILINEAR);
 
 				// TODO
-				int cores = Runtime.getRuntime().availableProcessors(); // Includes hyper threading cores
-				int threads = cores + 1;
-				System.out.println("Setting threads option to: " + threads);
+				// int cores = Runtime.getRuntime().availableProcessors(); // Includes hyper threading cores
+				// int threads = cores + 1;
+				// System.out.println("Setting threads option to: " + threads);
 				// frameGrabber.setVideoOption("threads", "" + threads);
+				// frameGrabber.setVideoOption("threads", "" + 4);
 
 				try {
 
 					frameGrabber.start();
 
-					System.out.println("Video Codec: " + frameGrabber.getVideoCodec());
+					if (TODO_DEBUG) {
+						System.out.println("FFVideoPlayerPanel video codec: " + frameGrabber.getVideoCodecName());
+					}
 
 					context.fireVideoOpened(video.getPath());
 
@@ -190,7 +193,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 			@Override
 			protected void filter(BufferedImage image) {
-				if (image != null) { // TODO
+				if (image != null) { // TODO: Shouldn't be possible..
 					// contrastFilter.filter(image, image);
 				}
 			}
