@@ -177,7 +177,7 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 		timestamp = frame.getTimestamp().longValue();
 
-		if (loop != null && loop.fromTimestamp != null && loop.toTimestamp != null && timestamp >= loop.toTimestamp) {
+		if (playing && loop != null && loop.fromTimestamp != null && loop.toTimestamp != null && timestamp >= loop.toTimestamp) {
 			setTimestamp(loop.fromTimestamp, playing);
 		}
 
@@ -281,9 +281,15 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 	@Override
 	public void setTimestamp(long timestamp, boolean play) {
 		this.timestamp = timestamp;
+
 		if (!play) {
 			showSingleFrame = true;
 		}
+
+		// TODO? This is not yet the actual time-stamp of the visible frame,
+		// the application 'feels' more responsive if the time-line is updated immediately
+		context.fireTimestampChanged(timestamp);
+
 	}
 
 	@Override

@@ -22,6 +22,8 @@
  */
 package org.glasspath.common.media.player;
 
+import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
+
 public class VideoPlayerAdapter implements IVideoPlayerListener {
 
 	public VideoPlayerAdapter() {
@@ -40,6 +42,11 @@ public class VideoPlayerAdapter implements IVideoPlayerListener {
 
 	@Override
 	public void timestampChanged(long timestamp) {
+
+	}
+
+	@Override
+	public void loopChanged(Loop loop) {
 
 	}
 

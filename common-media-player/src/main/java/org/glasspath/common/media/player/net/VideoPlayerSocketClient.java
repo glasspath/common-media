@@ -24,6 +24,7 @@ package org.glasspath.common.media.player.net;
 
 import org.glasspath.common.media.player.IVideoPlayerListener;
 import org.glasspath.common.media.player.VideoPlayer;
+import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
 
 public class VideoPlayerSocketClient extends AbstractSocketClient implements IVideoPlayerListener {
 
@@ -67,6 +68,11 @@ public class VideoPlayerSocketClient extends AbstractSocketClient implements IVi
 	@Override
 	public void timestampChanged(long timestamp) {
 		writeLine(VideoPlayerSocketServer.TIMESTAMP_CHANGED_PREFIX + timestamp);
+	}
+
+	@Override
+	public void loopChanged(Loop loop) {
+		// TODO?
 	}
 
 	@Override

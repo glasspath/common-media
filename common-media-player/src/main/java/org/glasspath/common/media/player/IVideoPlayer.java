@@ -25,6 +25,7 @@ package org.glasspath.common.media.player;
 import java.util.prefs.Preferences;
 
 import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
+import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
 import org.glasspath.common.swing.FrameContext;
 
 public interface IVideoPlayer extends FrameContext {
@@ -44,6 +45,8 @@ public interface IVideoPlayer extends FrameContext {
 	public void fireVideoOpened(String path);
 
 	public void firePlaybackStateChanged(boolean playing);
+
+	public void fireLoopChanged(Loop loop);
 
 	public void fireTimestampChanged(long timestamp);
 

@@ -104,7 +104,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 		frame.setDefaultCloseOperation(exitOnClose ? JFrame.DO_NOTHING_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
 		frame.setTitle(video.getPath());
 		frame.setIconImages(Icons.appIcon);
-		frame.setAlwaysOnTop(preferences.getBoolean("alwaysOnTop", false));
+		frame.setAlwaysOnTop(ViewTools.ALWAYS_ON_TOP_PREF.get(preferences));
 		frame.getContentPane().setBackground(Color.black);
 		frame.getContentPane().setLayout(new BorderLayout());
 		frame.addWindowListener(new WindowAdapter() {
@@ -147,8 +147,6 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
 					videoPlayerPanel.videoPlayerShown();
 
-					playbackTools.updateLoopMenuItems();
-
 					// TODO: On MacOS we need to validate to get the 1st frame to display, why?
 					frame.validate();
 					controlsBar.validate();
@@ -186,7 +184,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 			public void playbackStateChanged(boolean playing) {
 				controlsBar.updateControls();
 			}
-			
+
 			@Override
 			public void timestampChanged(long timestamp) {
 				controlsBar.repaintTimelineBar();
@@ -201,7 +199,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
 	private void initVideoPlayerPanel() {
 		if (videoPlayerPanel != null) {
-			videoPlayerPanel.setRepeatEnabled(playbackTools.isRepeatEnabled());
+			videoPlayerPanel.setRepeatEnabled(PlaybackTools.REPEAT_ENABLED_PREF.get(preferences));
 		}
 	}
 
@@ -264,6 +262,13 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	}
 
 	@Override
+	public void fireLoopChanged(Loop loop) {
+		for (IVideoPlayerListener listener : listeners) {
+			listener.loopChanged(loop);
+		}
+	}
+
+	@Override
 	public void fireRecordingStateChanged(boolean recording) {
 		for (IVideoPlayerListener listener : listeners) {
 			listener.recordingStateChanged(recording);
@@ -320,10 +325,9 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 			loop.fromTimestamp = timestamp;
 
 			controlsBar.getTimelineBar().repaint();
+			fireLoopChanged(loop);
 
 		}
-
-		playbackTools.updateLoopMenuItems();
 
 	}
 
@@ -341,23 +345,19 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 			loop.toTimestamp = timestamp;
 
 			controlsBar.getTimelineBar().repaint();
+			fireLoopChanged(loop);
 
 		}
-
-		playbackTools.updateLoopMenuItems();
 
 	}
 
 	@Override
 	public void clearLoopMarkers() {
-
 		if (videoPlayerPanel != null) {
 			videoPlayerPanel.setLoop(null);
 			controlsBar.getTimelineBar().repaint();
+			fireLoopChanged(null);
 		}
-
-		playbackTools.updateLoopMenuItems();
-
 	}
 
 	@Override

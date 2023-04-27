@@ -38,6 +38,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.RoundRectangle2D;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -403,6 +404,7 @@ public class ControlsBar extends JPanel {
 	public static class VideoTimelineBar extends JComponent {
 
 		private final IVideoPlayer context;
+		private final RoundRectangle2D.Float roundRect = new RoundRectangle2D.Float();
 		private int x, y, w, h;
 
 		public VideoTimelineBar(IVideoPlayer context) {
@@ -457,7 +459,7 @@ public class ControlsBar extends JPanel {
 			ILoopHandler loopHandler = context.getLoopHandler();
 			if (videoPlayerPanel != null && loopHandler != null) {
 
-				JMenuItem loopFromMenuItem = new JMenuItem("Loop From"); // TODO
+				JMenuItem loopFromMenuItem = new JMenuItem("Loop From");
 				menu.add(loopFromMenuItem);
 				loopFromMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.SHIFT_DOWN_MASK));
 				loopFromMenuItem.addActionListener(new ActionListener() {
@@ -468,7 +470,7 @@ public class ControlsBar extends JPanel {
 					}
 				});
 
-				JMenuItem loopToMenuItem = new JMenuItem("Loop To"); // TODO
+				JMenuItem loopToMenuItem = new JMenuItem("Loop To");
 				menu.add(loopToMenuItem);
 				loopToMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.SHIFT_DOWN_MASK));
 				loopToMenuItem.addActionListener(new ActionListener() {
@@ -479,7 +481,7 @@ public class ControlsBar extends JPanel {
 					}
 				});
 
-				JMenuItem clearLoopMarkersMenuItem = new JMenuItem("Clear Loop Markers"); // TODO
+				JMenuItem clearLoopMarkersMenuItem = new JMenuItem("Clear Loop Markers");
 				menu.add(clearLoopMarkersMenuItem);
 				clearLoopMarkersMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.SHIFT_DOWN_MASK));
 				clearLoopMarkersMenuItem.setEnabled(videoPlayerPanel.getLoop() != null);
@@ -491,7 +493,7 @@ public class ControlsBar extends JPanel {
 					}
 				});
 
-				JMenuItem exportToGifMenuItem = new JMenuItem("Export Loop to Gif"); // TODO
+				JMenuItem exportToGifMenuItem = new JMenuItem("Export Loop to Gif");
 				menu.add(exportToGifMenuItem);
 				exportToGifMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, KeyEvent.SHIFT_DOWN_MASK));
 				exportToGifMenuItem.setEnabled(videoPlayerPanel.getLoop() != null && videoPlayerPanel.getLoop().fromTimestamp != null && videoPlayerPanel.getLoop().toTimestamp != null);
@@ -530,7 +532,9 @@ public class ControlsBar extends JPanel {
 				if (duration > 0) {
 
 					g2d.setColor(TIMELINE_BAR_BG_COLOR);
-					g2d.fillRect(0, y, w, 5);
+					roundRect.setRoundRect(0, y, w, 5, 5, 5);
+					g2d.fill(roundRect);
+					// g2d.fillRect(0, y, w, 5);
 
 					Loop loop = videoPlayerPanel.getLoop();
 					if (loop != null) {
@@ -539,7 +543,7 @@ public class ControlsBar extends JPanel {
 
 							x = (int) (w * ((double) loop.fromTimestamp / (double) duration));
 							g2d.setColor(TIMELINE_BAR_LOOP_FROM_COLOR);
-							g2d.fillRect(x - 3, 3, 3, h - 6);
+							g2d.fillRect(x - 1, 3, 1, h - 6);
 
 						}
 
@@ -547,7 +551,7 @@ public class ControlsBar extends JPanel {
 
 							x = (int) (w * ((double) loop.toTimestamp / (double) duration));
 							g2d.setColor(TIMELINE_BAR_LOOP_TO_COLOR);
-							g2d.fillRect(x, 3, 3, h - 6);
+							g2d.fillRect(x, 3, 1, h - 6);
 
 						}
 
@@ -557,7 +561,9 @@ public class ControlsBar extends JPanel {
 					y = (h / 2) - 3;
 
 					g2d.setColor(TIMELINE_BAR_FG_COLOR);
-					g2d.fillRect(0, y, x, 5);
+					roundRect.setRoundRect(0, y, x, 5, 5, 5);
+					g2d.fill(roundRect);
+					// g2d.fillRect(0, y, x, 5);
 					// g2d.fillOval(x - 4, y - 3, 11, 11);
 
 				}

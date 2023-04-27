@@ -33,22 +33,25 @@ import javax.swing.KeyStroke;
 import org.glasspath.common.media.player.FramePanel;
 import org.glasspath.common.media.player.IVideoPlayer;
 import org.glasspath.common.os.OsUtils;
+import org.glasspath.common.os.preferences.BoolPref;
 import org.glasspath.common.swing.tools.AbstractTools;
 
 public class ViewTools extends AbstractTools<IVideoPlayer> {
+
+	public static final BoolPref ALWAYS_ON_TOP_PREF = new BoolPref("alwaysOnTop", false);
 
 	public ViewTools(IVideoPlayer context) {
 		super(context, "View");
 
 		JCheckBoxMenuItem alwaysOnTopMenuItem = new JCheckBoxMenuItem("Always on Top"); // TODO
 		menu.add(alwaysOnTopMenuItem);
-		alwaysOnTopMenuItem.setSelected(context.getPreferences().getBoolean("alwaysOnTop", false));
+		alwaysOnTopMenuItem.setSelected(ALWAYS_ON_TOP_PREF.get(context.getPreferences()));
 		alwaysOnTopMenuItem.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				context.getFrame().setAlwaysOnTop(alwaysOnTopMenuItem.isSelected());
-				context.getPreferences().putBoolean("alwaysOnTop", alwaysOnTopMenuItem.isSelected());
+				ALWAYS_ON_TOP_PREF.put(context.getPreferences(), alwaysOnTopMenuItem.isSelected());
 			}
 		});
 		context.getFrame().setAlwaysOnTop(alwaysOnTopMenuItem.isSelected());

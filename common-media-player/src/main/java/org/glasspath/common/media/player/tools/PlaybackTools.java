@@ -34,20 +34,19 @@ import org.glasspath.common.media.player.ILoopHandler;
 import org.glasspath.common.media.player.IVideoPlayer;
 import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
 import org.glasspath.common.media.player.VideoPlayerAdapter;
+import org.glasspath.common.os.preferences.BoolPref;
 import org.glasspath.common.swing.tools.AbstractTools;
 
 public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 
-	private final JCheckBoxMenuItem repeatEnabledMenuItem;
-	private final JMenuItem clearLoopMarkersMenuItem;
-	private final JMenuItem exportLoopToGifMenuItem;
+	public static final BoolPref REPEAT_ENABLED_PREF = new BoolPref("repeatEnabled", true);
 
 	public PlaybackTools(IVideoPlayer context) {
 		super(context, "Playback");
 
-		repeatEnabledMenuItem = new JCheckBoxMenuItem("Repeat");
+		JCheckBoxMenuItem repeatEnabledMenuItem = new JCheckBoxMenuItem("Repeat");
 		menu.add(repeatEnabledMenuItem);
-		repeatEnabledMenuItem.setSelected(context.getPreferences().getBoolean("repeatEnabled", true));
+		repeatEnabledMenuItem.setSelected(REPEAT_ENABLED_PREF.get(context.getPreferences()));
 		repeatEnabledMenuItem.addActionListener(new ActionListener() {
 
 			@Override
@@ -55,7 +54,7 @@ public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 				if (context.getVideoPlayerPanel() != null) {
 					context.getVideoPlayerPanel().setRepeatEnabled(repeatEnabledMenuItem.isSelected());
 				}
-				context.getPreferences().putBoolean("repeatEnabled", repeatEnabledMenuItem.isSelected());
+				REPEAT_ENABLED_PREF.put(context.getPreferences(), repeatEnabledMenuItem.isSelected());
 			}
 		});
 
@@ -72,15 +71,10 @@ public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 			}
 		});
 
-		context.addVideoPlayerListener(new VideoPlayerAdapter() {
-
-			@Override
-			public void playbackStateChanged(boolean playing) {
-				playPauseMenuItem.setText(context.getVideoPlayerPanel().isPlaying() ? "Pause" : "Play");
-			}
-		});
-
+		JMenuItem clearLoopMarkersMenuItem;
+		JMenuItem exportLoopToGifMenuItem;
 		ILoopHandler loopHandler = context.getLoopHandler();
+
 		if (loopHandler != null) {
 
 			menu.addSeparator();
@@ -113,6 +107,7 @@ public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 
 			clearLoopMarkersMenuItem = new JMenuItem("Clear Loop Markers"); // TODO
 			menu.add(clearLoopMarkersMenuItem);
+			clearLoopMarkersMenuItem.setEnabled(false);
 			clearLoopMarkersMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.SHIFT_DOWN_MASK));
 			clearLoopMarkersMenuItem.addActionListener(new ActionListener() {
 
@@ -124,6 +119,7 @@ public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 
 			exportLoopToGifMenuItem = new JMenuItem("Export Loop to Gif"); // TODO
 			menu.add(exportLoopToGifMenuItem);
+			exportLoopToGifMenuItem.setEnabled(false);
 			exportLoopToGifMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, KeyEvent.SHIFT_DOWN_MASK));
 			exportLoopToGifMenuItem.addActionListener(new ActionListener() {
 
@@ -138,23 +134,22 @@ public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 			exportLoopToGifMenuItem = null;
 		}
 
-	}
+		context.addVideoPlayerListener(new VideoPlayerAdapter() {
 
-	public boolean isRepeatEnabled() {
-		return repeatEnabledMenuItem.isSelected();
-	}
-
-	public void updateLoopMenuItems() {
-
-		if (clearLoopMarkersMenuItem != null && exportLoopToGifMenuItem != null) {
-
-			Loop loop = context.getVideoPlayerPanel().getLoop();
-
-			clearLoopMarkersMenuItem.setEnabled(loop != null);
-			exportLoopToGifMenuItem.setEnabled(loop != null && loop.fromTimestamp != null && loop.toTimestamp != null);
-
-		}
-
+			@Override
+			public void playbackStateChanged(boolean playing) {
+				playPauseMenuItem.setText(context.getVideoPlayerPanel().isPlaying() ? "Pause" : "Play");
+			}
+			
+			@Override
+			public void loopChanged(Loop loop) {
+				if (clearLoopMarkersMenuItem != null && exportLoopToGifMenuItem != null) {
+					clearLoopMarkersMenuItem.setEnabled(loop != null);
+					exportLoopToGifMenuItem.setEnabled(loop != null && loop.fromTimestamp != null && loop.toTimestamp != null);
+				}
+			}
+		});
+		
 	}
 
 }

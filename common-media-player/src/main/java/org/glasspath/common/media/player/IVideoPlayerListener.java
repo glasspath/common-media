@@ -22,6 +22,8 @@
  */
 package org.glasspath.common.media.player;
 
+import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
+
 public interface IVideoPlayerListener {
 
 	public void videoOpened(String path);
@@ -29,6 +31,8 @@ public interface IVideoPlayerListener {
 	public void playbackStateChanged(boolean playing);
 
 	public void timestampChanged(long timestamp);
+
+	public void loopChanged(Loop loop);
 
 	public void recordingStateChanged(boolean recording);
 
