@@ -103,7 +103,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
 		frame.setDefaultCloseOperation(exitOnClose ? JFrame.DO_NOTHING_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
 		frame.setTitle(video.getPath());
-		frame.setIconImage(Icons.motionPlayBlue.getImage());
+		frame.setIconImages(Icons.appIcon);
 		frame.setAlwaysOnTop(preferences.getBoolean("alwaysOnTop", false));
 		frame.getContentPane().setBackground(Color.black);
 		frame.getContentPane().setLayout(new BorderLayout());

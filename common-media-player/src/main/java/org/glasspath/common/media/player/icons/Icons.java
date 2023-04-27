@@ -22,7 +22,9 @@
  */
 package org.glasspath.common.media.player.icons;
 
+import java.awt.Image;
 import java.net.URL;
+import java.util.ArrayList;
 
 import org.glasspath.common.swing.icon.SvgIcon;
 
@@ -39,10 +41,25 @@ public class Icons {
 		return CLASS_LOADER.getResource("org/glasspath/common/media/player/icons/svg/" + name);
 	}
 
-	public static final SvgIcon motionPlayBlue = new SvgIcon(getSvg("motion-play.svg"));
+	private static URL motionPlayURL = getSvg("motion-play.svg");
+	public static final SvgIcon motionPlayBlue = new SvgIcon(motionPlayURL);
+	public static final SvgIcon motionPlayBlue22x22 = new SvgIcon(22, 0, motionPlayURL);
+	public static final SvgIcon motionPlayBlue24x24 = new SvgIcon(24, 0, motionPlayURL);
+	public static final SvgIcon motionPlayBlue32x32 = new SvgIcon(32, 0, motionPlayURL);
+	public static final SvgIcon motionPlayBlue48x48 = new SvgIcon(48, 0, motionPlayURL);
+
+	public static final ArrayList<Image> appIcon = new ArrayList<Image>();
+	static {
+		appIcon.add(motionPlayBlue.getImage());
+		appIcon.add(motionPlayBlue22x22.getImage());
+		appIcon.add(motionPlayBlue24x24.getImage());
+		appIcon.add(motionPlayBlue32x32.getImage());
+		appIcon.add(motionPlayBlue48x48.getImage());
+	}
 
 	static {
 		motionPlayBlue.setColorFilter(SvgIcon.BLUE);
+		motionPlayBlue22x22.setColorFilter(SvgIcon.BLUE);
 	}
 
 }
