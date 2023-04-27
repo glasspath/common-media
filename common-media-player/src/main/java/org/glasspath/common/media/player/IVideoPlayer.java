@@ -29,6 +29,8 @@ import org.glasspath.common.swing.FrameContext;
 
 public interface IVideoPlayer extends FrameContext {
 
+	public static final boolean DEFAULT_PLAYBACK_STATE_PLAYING = true;
+
 	public IVideoPlayerPanel getVideoPlayerPanel();
 
 	public ControlsBar getControlsBar();
@@ -53,13 +55,11 @@ public interface IVideoPlayer extends FrameContext {
 
 	public void fireVideoPlayerClosed();
 
+	public boolean isPlaying();
+
 	public ILoopHandler getLoopHandler();
 
-	public void updateControls();
-
 	public int getRate();
-
-	public void repaintTimelineBar();
 
 	public void exit();
 

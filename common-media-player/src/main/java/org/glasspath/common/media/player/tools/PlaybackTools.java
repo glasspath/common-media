@@ -33,12 +33,12 @@ import javax.swing.KeyStroke;
 import org.glasspath.common.media.player.ILoopHandler;
 import org.glasspath.common.media.player.IVideoPlayer;
 import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
+import org.glasspath.common.media.player.VideoPlayerAdapter;
 import org.glasspath.common.swing.tools.AbstractTools;
 
 public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 
 	private final JCheckBoxMenuItem repeatEnabledMenuItem;
-	private final JMenuItem playPauseMenuItem;
 	private final JMenuItem clearLoopMarkersMenuItem;
 	private final JMenuItem exportLoopToGifMenuItem;
 
@@ -59,7 +59,7 @@ public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 			}
 		});
 
-		playPauseMenuItem = new JMenuItem("Play");
+		JMenuItem playPauseMenuItem = new JMenuItem(IVideoPlayer.DEFAULT_PLAYBACK_STATE_PLAYING ? "Pause" : "Play");
 		menu.add(playPauseMenuItem);
 		playPauseMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0));
 		playPauseMenuItem.addActionListener(new ActionListener() {
@@ -69,6 +69,14 @@ public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 				if (context.getVideoPlayerPanel() != null) {
 					context.getVideoPlayerPanel().togglePlaying();
 				}
+			}
+		});
+
+		context.addVideoPlayerListener(new VideoPlayerAdapter() {
+
+			@Override
+			public void playbackStateChanged(boolean playing) {
+				playPauseMenuItem.setText(context.getVideoPlayerPanel().isPlaying() ? "Pause" : "Play");
 			}
 		});
 
@@ -134,10 +142,6 @@ public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 
 	public boolean isRepeatEnabled() {
 		return repeatEnabledMenuItem.isSelected();
-	}
-
-	public void updatePlayPauseMenuItem() {
-		playPauseMenuItem.setText(context.getVideoPlayerPanel().isPlaying() ? "Pause" : "Play");
 	}
 
 	public void updateLoopMenuItems() {

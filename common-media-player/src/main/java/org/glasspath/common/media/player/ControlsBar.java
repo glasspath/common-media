@@ -205,7 +205,7 @@ public class ControlsBar extends JPanel {
 				}
 				g2d.setStroke(CONTROLS_BAR_FG_STROKE);
 
-				if (context.getVideoPlayerPanel() != null && context.getVideoPlayerPanel().isPlaying()) {
+				if (context.isPlaying()) {
 
 					gp.reset();
 					gp.moveTo(9, 8);
@@ -335,7 +335,7 @@ public class ControlsBar extends JPanel {
 
 	protected void updateControls() {
 		playButton.repaint();
-		rateSpinner.setEnabled(context.getVideoPlayerPanel() != null && !context.getVideoPlayerPanel().isPlaying());
+		rateSpinner.setEnabled(!context.isPlaying());
 	}
 
 	public int getRate() {

@@ -177,7 +177,6 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 							playing = false;
 
 							context.firePlaybackStateChanged(playing);
-							context.updateControls();
 
 							if (repeatEnabled) {
 								lastSeekJump = System.currentTimeMillis();
@@ -194,7 +193,6 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 						if (timestamp != previousTimestamp) {
 
 							context.fireTimestampChanged(timestamp);
-							context.repaintTimelineBar();
 
 							if (playing && loop != null && loop.fromTimestamp != null && loop.toTimestamp != null && timestamp >= loop.toTimestamp) {
 
@@ -319,7 +317,7 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 			evrCanvas.play(playerInstance);
 			playing = true;
 
-			context.updateControls();
+			context.firePlaybackStateChanged(playing);
 
 		}
 
@@ -333,7 +331,7 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 			evrCanvas.pause(playerInstance);
 			playing = false;
 
-			context.updateControls();
+			context.firePlaybackStateChanged(playing);
 
 		}
 
@@ -404,7 +402,6 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 				}
 
 				context.fireTimestampChanged(timestamp);
-				context.repaintTimelineBar();
 
 				lastSeek = System.currentTimeMillis();
 
@@ -445,7 +442,6 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 		}
 
 		context.fireTimestampChanged(timestamp);
-		context.repaintTimelineBar();
 
 		lastSeek = System.currentTimeMillis();
 

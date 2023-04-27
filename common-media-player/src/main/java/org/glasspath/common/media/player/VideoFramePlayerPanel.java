@@ -41,7 +41,7 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 	protected final Video video;
 	protected final FramePanel framePanel;
 	private final Thread playbackThread;
-	private boolean playing = true;
+	private boolean playing = IVideoPlayer.DEFAULT_PLAYBACK_STATE_PLAYING;
 	private boolean repeatEnabled = true;
 	private long timestamp = 0 * 1000L;
 	private boolean showSingleFrame = false;
@@ -173,16 +173,15 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 	private void showFrame(Frame frame) {
 
 		framePanel.setFrame(frame);
+		framePanel.repaint();
 
 		timestamp = frame.getTimestamp().longValue();
-		context.fireTimestampChanged(timestamp);
 
 		if (loop != null && loop.fromTimestamp != null && loop.toTimestamp != null && timestamp >= loop.toTimestamp) {
 			setTimestamp(loop.fromTimestamp, playing);
 		}
 
-		framePanel.repaint();
-		context.getControlsBar().repaint();
+		context.fireTimestampChanged(timestamp);
 
 	}
 
@@ -228,7 +227,7 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 	public void setPlaying(boolean playing) {
 		this.playing = playing;
-		context.updateControls();
+		context.firePlaybackStateChanged(playing);
 	}
 
 	@Override

@@ -36,10 +36,10 @@ import java.util.prefs.Preferences;
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 
-import org.glasspath.common.icons.Icons;
 import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.media.player.IVideoPlayerPanel.GifExportRequest;
 import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
+import org.glasspath.common.media.player.icons.Icons;
 import org.glasspath.common.media.player.net.VideoPlayerSocketClient;
 import org.glasspath.common.media.player.net.VideoPlayerSocketServer;
 import org.glasspath.common.media.player.tools.FileTools;
@@ -103,7 +103,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
 		frame.setDefaultCloseOperation(exitOnClose ? JFrame.DO_NOTHING_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
 		frame.setTitle(video.getPath());
-		frame.setIconImage(Icons.squareEditOutline.getImage()); // TODO
+		frame.setIconImage(Icons.motionPlayBlue.getImage());
 		frame.setAlwaysOnTop(preferences.getBoolean("alwaysOnTop", false));
 		frame.getContentPane().setBackground(Color.black);
 		frame.getContentPane().setLayout(new BorderLayout());
@@ -179,6 +179,19 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
 		controlsBar = new ControlsBar(this);
 		frame.getContentPane().add(controlsBar, BorderLayout.SOUTH);
+
+		addVideoPlayerListener(new VideoPlayerAdapter() {
+
+			@Override
+			public void playbackStateChanged(boolean playing) {
+				controlsBar.updateControls();
+			}
+			
+			@Override
+			public void timestampChanged(long timestamp) {
+				controlsBar.repaintTimelineBar();
+			}
+		});
 
 		frame.setVisible(true);
 
@@ -279,24 +292,18 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	}
 
 	@Override
+	public boolean isPlaying() {
+		return videoPlayerPanel != null && videoPlayerPanel.isPlaying();
+	}
+
+	@Override
 	public ILoopHandler getLoopHandler() {
 		return this;
 	}
 
 	@Override
-	public void updateControls() {
-		playbackTools.updatePlayPauseMenuItem();
-		controlsBar.updateControls();
-	}
-
-	@Override
 	public int getRate() {
 		return controlsBar.getRate();
-	}
-
-	@Override
-	public void repaintTimelineBar() {
-		controlsBar.repaintTimelineBar();
 	}
 
 	@Override
@@ -359,7 +366,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 		if (videoPlayerPanel != null && videoPlayerPanel.getLoop() != null && videoPlayerPanel.getLoop().fromTimestamp != null && videoPlayerPanel.getLoop().toTimestamp != null) {
 
 			// TODO: Icon
-			String selectedFile = FileChooser.browseForFile("gif", Icons.squareEditOutline, true, frame, preferences, "gifExportLocation", "export.gif");
+			String selectedFile = FileChooser.browseForFile("gif", Icons.motionPlayBlue, true, frame, preferences, "gifExportLocation", "export.gif");
 			if (selectedFile != null && selectedFile.length() > 0) {
 
 				GifExportRequest request = new GifExportRequest(new File(selectedFile)) {
