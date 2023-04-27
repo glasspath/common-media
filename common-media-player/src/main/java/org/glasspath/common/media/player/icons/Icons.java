@@ -60,6 +60,9 @@ public class Icons {
 	static {
 		motionPlayBlue.setColorFilter(SvgIcon.BLUE);
 		motionPlayBlue22x22.setColorFilter(SvgIcon.BLUE);
+		motionPlayBlue24x24.setColorFilter(SvgIcon.BLUE);
+		motionPlayBlue32x32.setColorFilter(SvgIcon.BLUE);
+		motionPlayBlue48x48.setColorFilter(SvgIcon.BLUE);
 	}
 
 }
