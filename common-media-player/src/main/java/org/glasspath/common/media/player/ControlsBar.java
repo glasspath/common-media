@@ -101,7 +101,7 @@ public class ControlsBar extends JPanel {
 
 		GridBagLayout layout = new GridBagLayout();
 		layout.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0 };
-		layout.rowHeights = new int[] { 1, 4, 25, 5 };
+		layout.rowHeights = new int[] { 1, 4, 26, 5 };
 		layout.columnWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0 };
 		layout.columnWidths = new int[] { 10, 0, 5, 25, 1, 25, 1, 25, 1, 25, 1, 25, 8, 50, 10, 25, 15 };
 		setLayout(layout);
@@ -543,7 +543,7 @@ public class ControlsBar extends JPanel {
 
 							x = (int) (w * ((double) loop.fromTimestamp / (double) duration));
 							g2d.setColor(TIMELINE_BAR_LOOP_FROM_COLOR);
-							g2d.fillRect(x - 1, 3, 1, h - 6);
+							g2d.fillRect(x - 2, 3, 2, h - 6);
 
 						}
 
@@ -551,7 +551,7 @@ public class ControlsBar extends JPanel {
 
 							x = (int) (w * ((double) loop.toTimestamp / (double) duration));
 							g2d.setColor(TIMELINE_BAR_LOOP_TO_COLOR);
-							g2d.fillRect(x, 3, 1, h - 6);
+							g2d.fillRect(x, 3, 2, h - 6);
 
 						}
 

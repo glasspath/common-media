@@ -134,17 +134,11 @@ public abstract class FrameBuffer<F> {
 
 							buffer[i].source = decode();
 
-							// TODO: Check if we are at the end of the video?
-							if (buffer[i].source == null) {
-								setDecoderTimestamp(0);
-								buffer[i].source = decode();
-							}
-
 							if (buffer[i].source != null) {
 								buffer[i].setTimestamp(getDecoderTimestamp(buffer[i].source));
 								buffer[i].state = BufferedFrame.DECODED;
 							} else {
-								System.err.println("Decode failed..");
+								System.err.println("Decode failed, end of video reached?");
 								buffer[i].state = BufferedFrame.DECODE_FAILED;
 							}
 
@@ -295,6 +289,10 @@ public abstract class FrameBuffer<F> {
 
 		public BufferedFrame() {
 
+		}
+
+		public int getState() {
+			return state;
 		}
 
 		public boolean isImageReady() {

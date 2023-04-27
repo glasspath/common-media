@@ -24,6 +24,8 @@ package org.glasspath.common.media.ffmpeg.player;
 
 import java.awt.image.BufferedImage;
 
+import javax.swing.SwingUtilities;
+
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FrameGrabber.Exception;
 import org.glasspath.common.media.ffmpeg.FFVideoFrameConverter;
@@ -161,15 +163,24 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 			@Override
 			protected org.bytedeco.javacv.Frame decode() {
-				try {
-					org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
-					if (frame != null) {
-						return frame.clone(); // FFmpegFrameGrabber returns same instance each time, so for buffering we need to clone
+
+				org.bytedeco.javacv.Frame frame = decodeFrame();
+
+				if (frame == null) {
+
+					// TODO: Check if we are at the end of the video?
+					setDecoderTimestamp(0);
+
+					if (isRepeatEnabled()) {
+						frame = decodeFrame();
+					} else {
+						// Returning null will result in DECODE_FAILED which will cause the player to stop
 					}
-				} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e) {
-					e.printStackTrace();
+
 				}
-				return null;
+
+				return frame;
+
 			}
 
 			@Override
@@ -197,6 +208,18 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 				}
 
 			}
+
+			private org.bytedeco.javacv.Frame decodeFrame() {
+				try {
+					org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
+					if (frame != null) {
+						return frame.clone(); // FFmpegFrameGrabber returns same instance each time, so for buffering we need to clone
+					}
+				} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e) {
+					e.printStackTrace();
+				}
+				return null;
+			}
 		};
 
 	}
@@ -218,6 +241,25 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 			}
 
 			return frame;
+
+		} else if (buffer[bufferIndex].getState() == BufferedFrame.DECODE_FAILED) {
+
+			buffer[bufferIndex].reset();
+
+			bufferIndex++;
+			if (bufferIndex >= buffer.length) {
+				bufferIndex = 0;
+			}
+
+			SwingUtilities.invokeLater(new Runnable() {
+
+				@Override
+				public void run() {
+					setPlaying(false);
+				}
+			});
+
+			return null;
 
 		} else {
 			return null;
