@@ -26,12 +26,26 @@ public interface IVideoPlayerListener {
 
 	public void videoOpened(String path);
 
-	public void videoClosed(String path);
+	public void playbackStateChanged(boolean playing);
 
 	public void timestampChanged(long timestamp);
 
-	public void playbackEnded();
+	public void recordingStateChanged(boolean recording);
+
+	public void statisticsUpdated(VideoPlayerStatistics statistics);
+
+	public void videoClosed(String path);
 
 	public void videoPlayerClosed();
+
+	public static class VideoPlayerStatistics {
+
+		public final double frameRate;
+
+		public VideoPlayerStatistics(double frameRate) {
+			this.frameRate = frameRate;
+		}
+
+	}
 
 }

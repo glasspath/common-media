@@ -24,6 +24,7 @@ package org.glasspath.common.media.player;
 
 import java.util.prefs.Preferences;
 
+import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.swing.FrameContext;
 
 public interface IVideoPlayer extends FrameContext {
@@ -34,13 +35,21 @@ public interface IVideoPlayer extends FrameContext {
 
 	public Preferences getPreferences();
 
+	public void addVideoPlayerListener(IVideoPlayerListener listener);
+
+	public void removeVideoPlayerListener(IVideoPlayerListener listener);
+
 	public void fireVideoOpened(String path);
 
-	public void fireVideoClosed(String path);
+	public void firePlaybackStateChanged(boolean playing);
 
 	public void fireTimestampChanged(long timestamp);
 
-	public void firePlaybackEnded();
+	public void fireRecordingStateChanged(boolean recording);
+
+	public void fireStatisticsUpdated(VideoPlayerStatistics statistics);
+
+	public void fireVideoClosed(String path);
 
 	public void fireVideoPlayerClosed();
 

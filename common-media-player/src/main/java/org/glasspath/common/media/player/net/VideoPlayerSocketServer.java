@@ -27,8 +27,11 @@ import org.glasspath.common.media.player.IVideoPlayerListener;
 public class VideoPlayerSocketServer extends AbstractSocketServer {
 
 	public static final String FILE_OPENED_PREFIX = "file opened: ";
-	public static final String FILE_CLOSED_PREFIX = "file closed: ";
+	public static final String PLAYBACK_STATE_CHANGED_PREFIX = "playing: ";
 	public static final String TIMESTAMP_CHANGED_PREFIX = "t: ";
+	public static final String RECORDING_STATE_CHANGED_PREFIX = "recording: ";
+	public static final String STATISTICS_UPDATED_PREFIX = "stats: ";
+	public static final String FILE_CLOSED_PREFIX = "file closed: ";
 	public static final String VIDEO_PLAYER_CLOSED_PREFIX = "video player closed";
 
 	private final IVideoPlayerListener listener;

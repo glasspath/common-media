@@ -30,14 +30,14 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
+import org.glasspath.common.media.h264.H264NalUnit;
 import org.glasspath.common.media.mfsdk.EvrCanvas.PlayerBufferingState;
 import org.glasspath.common.media.mfsdk.EvrCanvas.PlayerInstanceState;
-import org.glasspath.common.media.h264.H264NalUnit;
 import org.glasspath.common.media.mfsdk.EvrCanvasPanel;
 import org.glasspath.common.media.mfsdk.MFUtils;
+import org.glasspath.common.media.player.IVideoPlayerListener;
+import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.media.player.IVideoPreviewPanel;
-import org.glasspath.common.media.player.VideoPreviewPanelListener;
-import org.glasspath.common.media.player.VideoPreviewPanelListener.DecoderStatistics;
 import org.glasspath.common.media.rtsp.H264ParameterSets;
 import org.glasspath.common.media.rtsp.RtspStreamListener;
 
@@ -56,7 +56,7 @@ public abstract class MFVideoPreviewPanel extends EvrCanvasPanel implements IVid
 	private int fpsFrameCount = 0;
 	private long lastFpsMeasurement = 0;
 
-	public MFVideoPreviewPanel(VideoPreviewPanelListener previewPanelListener) {
+	public MFVideoPreviewPanel(IVideoPlayerListener previewPanelListener) {
 		super();
 
 		streamListener = new RtspStreamListener() {
@@ -72,7 +72,7 @@ public abstract class MFVideoPreviewPanel extends EvrCanvasPanel implements IVid
 			@Override
 			public void nalUnitReceived(H264NalUnit nalUnit) {
 
-				previewPanelListener.timelineUpdate(nalUnit.receivedAt);
+				previewPanelListener.timestampChanged(nalUnit.receivedAt);
 
 				if (playerInstance >= 0 && playerState == PlayerState.PLAYER_STARTED) {
 
@@ -120,9 +120,9 @@ public abstract class MFVideoPreviewPanel extends EvrCanvasPanel implements IVid
 						if (System.currentTimeMillis() > lastFpsMeasurement + 3000) {
 
 							if (lastFpsMeasurement != 0) {
-								final double time = System.currentTimeMillis() - lastFpsMeasurement;
-								final double fps = fpsFrameCount / (time / 1000.0);
-								previewPanelListener.statisticsUpdate(new DecoderStatistics(fps));
+								double time = System.currentTimeMillis() - lastFpsMeasurement;
+								double fps = fpsFrameCount / (time / 1000.0);
+								previewPanelListener.statisticsUpdated(new VideoPlayerStatistics(fps));
 							}
 
 							fpsFrameCount = 0;
@@ -221,7 +221,7 @@ public abstract class MFVideoPreviewPanel extends EvrCanvasPanel implements IVid
 							@Override
 							public void run() {
 
-								final long waitUntil = System.currentTimeMillis() + TIMEOUT;
+								long waitUntil = System.currentTimeMillis() + TIMEOUT;
 								while (true) {
 
 									if (evrCanvas.getPlayerInstanceState(playerInstance) == PlayerInstanceState.PLAYER_INSTANCE_STATE_RUNNING.getValue() && evrCanvas.getPlayerBufferingState(playerInstance) == PlayerBufferingState.PLAYER_BUFFERING_STATE_BUFFERING.getValue()) {

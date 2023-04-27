@@ -60,10 +60,8 @@ public class VideoPlayerSocketClient extends AbstractSocketClient implements IVi
 	}
 
 	@Override
-	public void videoClosed(String path) {
-		String s = VideoPlayerSocketServer.FILE_CLOSED_PREFIX + path;
-		setWelcomeMessage(s);
-		writeLine(s);
+	public void playbackStateChanged(boolean playing) {
+		writeLine(VideoPlayerSocketServer.PLAYBACK_STATE_CHANGED_PREFIX + playing);
 	}
 
 	@Override
@@ -72,8 +70,20 @@ public class VideoPlayerSocketClient extends AbstractSocketClient implements IVi
 	}
 
 	@Override
-	public void playbackEnded() {
+	public void recordingStateChanged(boolean recording) {
+		writeLine(VideoPlayerSocketServer.RECORDING_STATE_CHANGED_PREFIX + recording);
+	}
 
+	@Override
+	public void statisticsUpdated(VideoPlayerStatistics statistics) {
+		writeLine(VideoPlayerSocketServer.STATISTICS_UPDATED_PREFIX + "fps=" + statistics.frameRate);
+	}
+
+	@Override
+	public void videoClosed(String path) {
+		String s = VideoPlayerSocketServer.FILE_CLOSED_PREFIX + path;
+		setWelcomeMessage(s);
+		writeLine(s);
 	}
 
 	@Override

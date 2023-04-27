@@ -37,6 +37,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 
 import org.glasspath.common.icons.Icons;
+import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.media.player.IVideoPlayerPanel.GifExportRequest;
 import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
 import org.glasspath.common.media.player.net.VideoPlayerSocketClient;
@@ -236,9 +237,9 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	}
 
 	@Override
-	public void fireVideoClosed(String path) {
+	public void firePlaybackStateChanged(boolean playing) {
 		for (IVideoPlayerListener listener : listeners) {
-			listener.videoClosed(path);
+			listener.playbackStateChanged(playing);
 		}
 	}
 
@@ -250,9 +251,23 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	}
 
 	@Override
-	public void firePlaybackEnded() {
+	public void fireRecordingStateChanged(boolean recording) {
 		for (IVideoPlayerListener listener : listeners) {
-			listener.playbackEnded();
+			listener.recordingStateChanged(recording);
+		}
+	}
+
+	@Override
+	public void fireStatisticsUpdated(VideoPlayerStatistics statistics) {
+		for (IVideoPlayerListener listener : listeners) {
+			listener.statisticsUpdated(statistics);
+		}
+	}
+
+	@Override
+	public void fireVideoClosed(String path) {
+		for (IVideoPlayerListener listener : listeners) {
+			listener.videoClosed(path);
 		}
 	}
 

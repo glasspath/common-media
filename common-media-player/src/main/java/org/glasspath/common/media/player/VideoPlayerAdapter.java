@@ -22,21 +22,44 @@
  */
 package org.glasspath.common.media.player;
 
-public interface VideoPreviewPanelListener {
+public class VideoPlayerAdapter implements IVideoPlayerListener {
 
-	public void timelineUpdate(long timestamp);
+	public VideoPlayerAdapter() {
 
-	public void recordingStateChanged(boolean recording);
+	}
 
-	public void statisticsUpdate(DecoderStatistics statistics);
+	@Override
+	public void videoOpened(String path) {
 
-	public static class DecoderStatistics {
+	}
 
-		public final double frameRate;
+	@Override
+	public void playbackStateChanged(boolean playing) {
 
-		public DecoderStatistics(double frameRate) {
-			this.frameRate = frameRate;
-		}
+	}
+
+	@Override
+	public void timestampChanged(long timestamp) {
+
+	}
+
+	@Override
+	public void recordingStateChanged(boolean recording) {
+
+	}
+
+	@Override
+	public void statisticsUpdated(VideoPlayerStatistics statistics) {
+
+	}
+
+	@Override
+	public void videoClosed(String path) {
+
+	}
+
+	@Override
+	public void videoPlayerClosed() {
 
 	}
 

@@ -176,7 +176,7 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 
 							playing = false;
 
-							context.firePlaybackEnded();
+							context.firePlaybackStateChanged(playing);
 							context.updateControls();
 
 							if (repeatEnabled) {
