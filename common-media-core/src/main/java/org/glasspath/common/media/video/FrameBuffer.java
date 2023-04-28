@@ -28,51 +28,61 @@ import java.util.List;
 
 public abstract class FrameBuffer<F> {
 
+	private final int preProcessorThreads;
+	private final int postProcessorThreads;
 	private BufferedFrame<F>[] buffer;
+	private final List<Worker> workers;
 	private final Thread[] threads;
-	private final List<Decoder> decoders;
-	private final List<Converter> converters;
-	private final List<Filter> filters;
 	private Long seekTimestamp = null;
 	private boolean exit = false;
 
 	public FrameBuffer() {
-		this(1, 1, 1);
+		this(1, 1, 1, 1);
 	}
 
-	public FrameBuffer(int decoderThreads, int converterThreads, int filterThreads) {
+	public FrameBuffer(int decoderThreads, int preProcessorThreads, int converterThreads, int postProcessorThreads) {
+
+		this.preProcessorThreads = preProcessorThreads;
+		this.postProcessorThreads = postProcessorThreads;
 
 		buffer = createBuffer();
 
-		threads = new Thread[decoderThreads + converterThreads + filterThreads];
+		workers = new ArrayList<>();
+		threads = new Thread[decoderThreads + preProcessorThreads + converterThreads + postProcessorThreads];
 
-		decoders = new ArrayList<>();
 		for (int i = 0; i < decoderThreads; i++) {
 
 			Decoder decoder = new Decoder(decoderThreads, i);
 
-			decoders.add(decoder);
+			workers.add(decoder);
 			threads[i] = new Thread(decoder);
 
 		}
 
-		converters = new ArrayList<>();
+		for (int i = 0; i < preProcessorThreads; i++) {
+
+			PreProcessor preProcessor = new PreProcessor(preProcessorThreads, i);
+
+			workers.add(preProcessor);
+			threads[decoderThreads + i] = new Thread(preProcessor);
+
+		}
+
 		for (int i = 0; i < converterThreads; i++) {
 
 			Converter converter = new Converter(converterThreads, i);
 
-			converters.add(converter);
-			threads[i + decoderThreads] = new Thread(converter);
+			workers.add(converter);
+			threads[decoderThreads + preProcessorThreads + i] = new Thread(converter);
 
 		}
 
-		filters = new ArrayList<>();
-		for (int i = 0; i < filterThreads; i++) {
+		for (int i = 0; i < postProcessorThreads; i++) {
 
-			Filter filter = new Filter(filterThreads, i);
+			PostProcessor postProcessor = new PostProcessor(postProcessorThreads, i);
 
-			filters.add(filter);
-			threads[i + decoderThreads + converterThreads] = new Thread(filter);
+			workers.add(postProcessor);
+			threads[decoderThreads + preProcessorThreads + converterThreads + i] = new Thread(postProcessor);
 
 		}
 
@@ -86,49 +96,19 @@ public abstract class FrameBuffer<F> {
 
 	public void reset() {
 
-		for (Decoder decoder : decoders) {
-			decoder.reset = true;
-		}
-
-		for (Converter converter : converters) {
-			converter.reset = true;
-		}
-
-		for (Filter filter : filters) {
-			filter.reset = true;
+		for (Worker worker : workers) {
+			worker.reset = true;
 		}
 
 		while (true) {
 
 			boolean resetPerformed = true;
 
-			for (Decoder decoder : decoders) {
-				if (!decoder.resetPerformed) {
+			for (Worker worker : workers) {
+				if (!worker.resetPerformed) {
 					resetPerformed = false;
 					break;
 				}
-			}
-
-			if (resetPerformed) {
-
-				for (Converter converter : converters) {
-					if (!converter.resetPerformed) {
-						resetPerformed = false;
-						break;
-					}
-				}
-
-				if (resetPerformed) {
-
-					for (Filter filter : filters) {
-						if (!filter.resetPerformed) {
-							resetPerformed = false;
-							break;
-						}
-					}
-
-				}
-
 			}
 
 			if (resetPerformed) {
@@ -150,19 +130,9 @@ public abstract class FrameBuffer<F> {
 	}
 
 	public void resume() {
-
-		for (Decoder decoder : decoders) {
-			decoder.reset = false;
+		for (Worker worker : workers) {
+			worker.reset = false;
 		}
-
-		for (Converter converter : converters) {
-			converter.reset = false;
-		}
-
-		for (Filter filter : filters) {
-			filter.reset = false;
-		}
-
 	}
 
 	public void exit() {
@@ -175,19 +145,33 @@ public abstract class FrameBuffer<F> {
 
 	protected abstract BufferedFrame<F>[] createBuffer();
 
-	protected abstract boolean createDecoder();
+	protected abstract boolean createDecoder(int thread);
 
-	protected abstract long getDecoderTimestamp(F source);
+	protected abstract long getDecoderTimestamp(int thread, F source);
 
-	protected abstract void setDecoderTimestamp(long timestamp);
+	protected abstract void setDecoderTimestamp(int thread, long timestamp);
 
-	protected abstract F decode();
+	protected abstract F decode(int thread);
 
-	protected abstract BufferedImage convert(F source);
+	protected abstract void closeDecoder(int thread);
 
-	protected abstract void filter(BufferedImage image);
+	protected abstract boolean createPreProcessor(int thread);
 
-	protected abstract void closeDecoder();
+	protected abstract F preProcess(int thread, F frame);
+
+	protected abstract void closePreProcessor(int thread);
+
+	protected abstract boolean createConverter(int thread);
+
+	protected abstract BufferedImage convert(int thread, F source);
+
+	protected abstract void closeConverter(int thread);
+
+	protected abstract boolean createPostProcessor(int thread);
+
+	protected abstract void postProcess(int thread, BufferedImage image);
+
+	protected abstract void closePostProcessor(int thread);
 
 	public void seek(long timestamp) {
 		seekTimestamp = timestamp;
@@ -202,7 +186,7 @@ public abstract class FrameBuffer<F> {
 		@Override
 		public void run() {
 
-			if (createDecoder()) {
+			if (createDecoder(workerIndex)) {
 
 				try {
 
@@ -213,15 +197,19 @@ public abstract class FrameBuffer<F> {
 						if (buffer[i].state == BufferedFrame.CLEARED) {
 
 							if (seekTimestamp != null) {
-								setDecoderTimestamp(seekTimestamp.longValue());
+								setDecoderTimestamp(workerIndex, seekTimestamp.longValue());
 								seekTimestamp = null;
 							}
 
-							buffer[i].source = decode();
+							buffer[i].source = decode(workerIndex);
 
 							if (buffer[i].source != null) {
-								buffer[i].setTimestamp(getDecoderTimestamp(buffer[i].source));
-								buffer[i].state = BufferedFrame.DECODED;
+								buffer[i].setTimestamp(getDecoderTimestamp(workerIndex, buffer[i].source));
+								if (preProcessorThreads > 0) {
+									buffer[i].state = BufferedFrame.DECODED;
+								} else {
+									buffer[i].state = BufferedFrame.PRE_PROCESSED;
+								}
 							} else {
 								System.err.println("Decode failed, end of video reached?");
 								buffer[i].state = BufferedFrame.DECODE_FAILED;
@@ -230,7 +218,7 @@ public abstract class FrameBuffer<F> {
 							next();
 
 						} else {
-							Thread.sleep(1);
+							Thread.sleep(0, 100);
 						}
 
 					}
@@ -239,7 +227,53 @@ public abstract class FrameBuffer<F> {
 					e.printStackTrace();
 				}
 
-				closeDecoder();
+				closeDecoder(workerIndex);
+
+			}
+
+		}
+
+	}
+
+	protected class PreProcessor extends Worker {
+
+		protected PreProcessor(int workerCount, int workerIndex) {
+			super(workerCount, workerIndex);
+		}
+
+		@Override
+		public void run() {
+
+			if (createPreProcessor(workerIndex)) {
+
+				try {
+
+					while (!exit) {
+
+						handleReset();
+
+						if (buffer[i].state == BufferedFrame.DECODED) {
+
+							buffer[i].source = preProcess(workerIndex, buffer[i].source);
+							if (buffer[i].source != null) {
+								buffer[i].state = BufferedFrame.PRE_PROCESSED;
+							} else {
+								buffer[i].state = BufferedFrame.PRE_PROCESS_FAILED;
+							}
+
+							next();
+
+						} else {
+							Thread.sleep(0, 100);
+						}
+
+					}
+
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				closePreProcessor(workerIndex);
 
 			}
 
@@ -256,66 +290,82 @@ public abstract class FrameBuffer<F> {
 		@Override
 		public void run() {
 
-			try {
+			if (createConverter(workerIndex)) {
 
-				while (!exit) {
+				try {
 
-					handleReset();
+					while (!exit) {
 
-					if (buffer[i].state == BufferedFrame.DECODED) {
+						handleReset();
 
-						buffer[i].setImage(convert(buffer[i].source));
-						buffer[i].getImage().setAccelerationPriority(1.0F);
+						if (buffer[i].state == BufferedFrame.PRE_PROCESSED) {
 
-						buffer[i].source = null;
-						buffer[i].state = BufferedFrame.CONVERTED;
+							buffer[i].setImage(convert(workerIndex, buffer[i].source));
+							buffer[i].getImage().setAccelerationPriority(1.0F);
 
-						next();
+							buffer[i].source = null;
+							if (postProcessorThreads > 0) {
+								buffer[i].state = BufferedFrame.CONVERTED;
+							} else {
+								buffer[i].state = BufferedFrame.READY;
+							}
 
-					} else {
-						Thread.sleep(1);
+							next();
+
+						} else {
+							Thread.sleep(0, 100);
+						}
+
 					}
 
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+				closeConverter(workerIndex);
+
 			}
 
 		}
 
 	}
 
-	protected class Filter extends Worker {
+	protected class PostProcessor extends Worker {
 
-		protected Filter(int workerCount, int workerIndex) {
+		protected PostProcessor(int workerCount, int workerIndex) {
 			super(workerCount, workerIndex);
 		}
 
 		@Override
 		public void run() {
 
-			try {
+			if (createPostProcessor(workerIndex)) {
 
-				while (!exit) {
+				try {
 
-					handleReset();
+					while (!exit) {
 
-					if (buffer[i].state == BufferedFrame.CONVERTED) {
+						handleReset();
 
-						filter(buffer[i].getImage());
-						buffer[i].state = BufferedFrame.FILTERED;
+						if (buffer[i].state == BufferedFrame.CONVERTED) {
 
-						next();
+							postProcess(workerIndex, buffer[i].getImage());
+							buffer[i].state = BufferedFrame.READY;
 
-					} else {
-						Thread.sleep(1);
+							next();
+
+						} else {
+							Thread.sleep(0, 100);
+						}
+
 					}
 
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+				closePostProcessor(workerIndex);
+
 			}
 
 		}
@@ -365,11 +415,13 @@ public abstract class FrameBuffer<F> {
 
 	public static abstract class BufferedFrame<F> extends Frame {
 
+		public static final int DECODE_FAILED = -1;
+		public static final int PRE_PROCESS_FAILED = -2;
 		public static final int CLEARED = 0;
 		public static final int DECODED = 1;
-		public static final int CONVERTED = 2;
-		public static final int FILTERED = 3;
-		public static final int DECODE_FAILED = -1;
+		public static final int PRE_PROCESSED = 2;
+		public static final int CONVERTED = 3;
+		public static final int READY = 4;
 
 		protected F source = null;
 		protected int state = CLEARED;
@@ -383,7 +435,7 @@ public abstract class FrameBuffer<F> {
 		}
 
 		public boolean isImageReady() {
-			return state == FILTERED;
+			return state == READY;
 		}
 
 		public void reset() {
