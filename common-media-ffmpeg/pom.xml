@@ -138,6 +138,10 @@
                     <groupId>org.bytedeco</groupId>
                     <artifactId>tesseract-platform</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-graphics</artifactId>
+                </exclusion>
             </exclusions>
 		</dependency>
 
