@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.SwingUtilities;
 
+import org.bytedeco.javacv.FFmpegFrameFilter;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FrameGrabber.Exception;
 import org.glasspath.common.media.ffmpeg.FFVideoFrameConverter;
@@ -66,13 +67,27 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 			buffer[i] = new FFBufferedFrame();
 		}
 
+		int preProcessorCount = 1;
+		// String preProcessorFilter = "eq=brightness=0.5"; // Not working, requires GPL build of FFmpeg
+		// String preProcessorFilter = "colorlevels=romin=0.5:gomin=0.5:bomin=0.75";
+		// String preProcessorFilter = "colorkey=green";
+		// String preProcessorFilter = "colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131";
+		// String preProcessorFilter = "curves=preset=vintage";
+		// String preProcessorFilter = "curves=blue='0/0 0.5/0.58 1/1'";
+		// String preProcessorFilter = "colorlevels=rimin=0.039:gimin=0.039:bimin=0.039:rimax=0.96:gimax=0.96:bimax=0.96";
+		// String preProcessorFilter = "colorcontrast=rc=1.0:rcw=1.0:gm=1.0:gmw=1.0:by=1.0:byw=1.0:pl=1.0";
+		String preProcessorFilter = "colorlevels=rimin=0.039:gimin=0.039:bimin=0.039:rimax=0.96:gimax=0.96:bimax=0.96,colorcontrast=rc=1.0:rcw=1.0:gm=1.0:gmw=1.0:by=1.0:byw=1.0:pl=1.0";
+
+		int postProcessorCount = 0;
 		ContrastFilter contrastFilter = new ContrastFilter();
 		contrastFilter.setBrightness(1.5F);
 		contrastFilter.setContrast(2.0F);
 
-		frameBuffer = new FrameBuffer<org.bytedeco.javacv.Frame>() {
+		frameBuffer = new FrameBuffer<org.bytedeco.javacv.Frame>(1, preProcessorCount, 1, postProcessorCount) {
 
 			private FFmpegFrameGrabber frameGrabber = null;
+			private int frameGrabberState = 0;
+			private FFmpegFrameFilter[] frameFilters = new FFmpegFrameFilter[preProcessorCount];
 
 			@Override
 			protected BufferedFrame<org.bytedeco.javacv.Frame>[] createBuffer() {
@@ -80,7 +95,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 			}
 
 			@Override
-			protected boolean createDecoder() {
+			protected boolean createDecoder(int thread) {
 
 				frameGrabber = new FFmpegFrameGrabber(video.getPath());
 				// frameGrabber.setVideoCodecName("h264_cuvid");
@@ -122,7 +137,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 					duration = frameGrabber.getLengthInTime();
 					frameRate = frameGrabber.getFrameRate();
-					
+
 					if (TODO_TEST_QSV_DECODER) {
 						duration /= 10;
 					}
@@ -148,7 +163,13 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 					frameGrabber.setImageHeight(height);
 					 */
 
-					return interval > 0;
+					if (interval > 0) {
+						frameGrabberState = 1;
+					} else {
+						frameGrabberState = -1;
+					}
+
+					return frameGrabberState == 1;
 
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -160,7 +181,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 			}
 
 			@Override
-			protected long getDecoderTimestamp(org.bytedeco.javacv.Frame source) {
+			protected long getDecoderTimestamp(int thread, org.bytedeco.javacv.Frame source) {
 				if (TODO_TEST_QSV_DECODER) {
 					return frameGrabber.getTimestamp() / 1000;
 				} else {
@@ -169,7 +190,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 			}
 
 			@Override
-			protected void setDecoderTimestamp(long timestamp) {
+			protected void setDecoderTimestamp(int thread, long timestamp) {
 				try {
 					if (TODO_TEST_QSV_DECODER) {
 						frameGrabber.setVideoTimestamp(timestamp / 10000);
@@ -182,17 +203,17 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 			}
 
 			@Override
-			protected org.bytedeco.javacv.Frame decode() {
+			protected org.bytedeco.javacv.Frame decode(int thread) {
 
-				org.bytedeco.javacv.Frame frame = decodeFrame();
+				org.bytedeco.javacv.Frame frame = decodeFrame(thread);
 
 				if (frame == null) {
 
 					// TODO: Check if we are at the end of the video?
-					setDecoderTimestamp(0);
+					setDecoderTimestamp(thread, 0);
 
 					if (isRepeatEnabled()) {
-						frame = decodeFrame();
+						frame = decodeFrame(thread);
 					} else {
 						// Returning null will result in DECODE_FAILED which will cause the player to stop
 					}
@@ -203,33 +224,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 			}
 
-			@Override
-			protected BufferedImage convert(org.bytedeco.javacv.Frame source) {
-				return frameConverter.createBufferedImage(source);
-			}
-
-			@Override
-			protected void filter(BufferedImage image) {
-				if (image != null) { // TODO: Shouldn't be possible..
-					// contrastFilter.filter(image, image);
-				}
-			}
-
-			@Override
-			protected void closeDecoder() {
-
-				if (frameGrabber != null) {
-					try {
-						System.out.println("Closing frame grabber");
-						frameGrabber.close();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-
-			}
-
-			private org.bytedeco.javacv.Frame decodeFrame() {
+			private org.bytedeco.javacv.Frame decodeFrame(int thread) {
 				try {
 					org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
 					if (frame != null) {
@@ -239,6 +234,115 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 					e.printStackTrace();
 				}
 				return null;
+			}
+
+			@Override
+			protected void closeDecoder(int thread) {
+				if (frameGrabber != null) {
+					try {
+						frameGrabber.close();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+
+			@Override
+			protected boolean createPreProcessor(int thread) {
+
+				while (frameGrabberState == 0) {
+					try {
+						Thread.sleep(1);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+
+				if (frameGrabber != null && thread >= 0 && thread < frameFilters.length) {
+
+					try {
+
+						frameFilters[thread] = new FFmpegFrameFilter(preProcessorFilter, frameGrabber.getImageWidth(), frameGrabber.getImageHeight());
+						frameFilters[thread].setPixelFormat(frameGrabber.getPixelFormat());
+						frameFilters[thread].start();
+
+						return true;
+
+					} catch (org.bytedeco.javacv.FFmpegFrameFilter.Exception e) {
+						e.printStackTrace();
+					}
+
+				}
+
+				frameFilters[thread] = null;
+
+				// TODO? We prefer to continue (but without actually filtering)
+				return true;
+
+			}
+
+			@Override
+			protected org.bytedeco.javacv.Frame preProcess(int thread, org.bytedeco.javacv.Frame frame) {
+
+				if (frameFilters[thread] != null) {
+
+					try {
+						frameFilters[thread].push(frame);
+						org.bytedeco.javacv.Frame f = frameFilters[thread].pull();
+						if (f != null) {
+							return f.clone();
+						}
+					} catch (org.bytedeco.javacv.FFmpegFrameFilter.Exception e) {
+						e.printStackTrace();
+					}
+
+				}
+
+				return frame;
+
+			}
+
+			@Override
+			protected void closePreProcessor(int thread) {
+				if (frameFilters[thread] != null) {
+					try {
+						frameFilters[thread].close();
+					} catch (org.bytedeco.javacv.FrameFilter.Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+
+			@Override
+			protected boolean createConverter(int thread) {
+				return frameConverter != null;
+			}
+
+			@Override
+			protected BufferedImage convert(int thread, org.bytedeco.javacv.Frame source) {
+				return frameConverter.createBufferedImage(source);
+			}
+
+			@Override
+			protected void closeConverter(int thread) {
+
+			}
+
+			@Override
+			protected boolean createPostProcessor(int thread) {
+				return true;
+			}
+
+			@Override
+			protected void postProcess(int thread, BufferedImage image) {
+				if (image != null) { // TODO: Shouldn't be possible..
+					// contrastFilter.filter(image, image);
+				}
+			}
+
+			@Override
+			protected void closePostProcessor(int thread) {
+
 			}
 		};
 
@@ -262,7 +366,12 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 			return frame;
 
-		} else if (buffer[bufferIndex].getState() == BufferedFrame.DECODE_FAILED) {
+		} else if (buffer[bufferIndex].getState() < 0) {
+
+			// TODO? When repeat is not enabled decoding will fail on the last frame,
+			// here we set playing to false, this is normal behavior, but we can also
+			// get here if something else goes wrong (decoding failed on another frame
+			// or pre-processing failed for example) is this the way we want to do this?
 
 			buffer[bufferIndex].reset();
 
