@@ -50,6 +50,10 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		}
 	}
 
+	public static final int FRAME_BUFFER_SIZE = 10;
+	public static final int MAX_DECODE_FAILED_COUNT = 5;
+	public static final int END_OF_VIDEO_REACHED_MARGIN = 30 * 33333;
+
 	private final FFBufferedFrame[] buffer;
 	private final FrameBuffer<org.bytedeco.javacv.Frame> frameBuffer;
 	private final FFVideoFrameConverter frameConverter = new FFVideoFrameConverter();
@@ -57,12 +61,13 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	private double frameRate = 0.0;
 	private int interval = 0;
 	private int bufferIndex = 0;
+	private int decodeFailedCount = 0;
 	private boolean exit = false;
 
 	public FFVideoPlayerPanel(IVideoPlayer context, Video video) {
 		super(context, video);
 
-		buffer = new FFBufferedFrame[10];
+		buffer = new FFBufferedFrame[FRAME_BUFFER_SIZE];
 		for (int i = 0; i < buffer.length; i++) {
 			buffer[i] = new FFBufferedFrame();
 		}
@@ -209,8 +214,10 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 				if (frame == null) {
 
-					// TODO: Check if we are at the end of the video?
-					setDecoderTimestamp(thread, 0);
+					// TODO: Is there a better way to check if we are at the end of the video?
+					if (getDecoderTimestamp(thread, null) > duration - END_OF_VIDEO_REACHED_MARGIN) {
+						setDecoderTimestamp(thread, 0);
+					}
 
 					if (isRepeatEnabled()) {
 						frame = decodeFrame(thread);
@@ -227,7 +234,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 			private org.bytedeco.javacv.Frame decodeFrame(int thread) {
 				try {
 					org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
-					if (frame != null) {
+					if (frame != null && frame.image != null) {
 						return frame.clone(); // FFmpegFrameGrabber returns same instance each time, so for buffering we need to clone
 					}
 				} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e) {
@@ -364,6 +371,8 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 				bufferIndex = 0;
 			}
 
+			decodeFailedCount = 0;
+
 			return frame;
 
 		} else if (buffer[bufferIndex].getState() < 0) {
@@ -380,13 +389,18 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 				bufferIndex = 0;
 			}
 
-			SwingUtilities.invokeLater(new Runnable() {
+			decodeFailedCount++;
+			if (decodeFailedCount >= MAX_DECODE_FAILED_COUNT) {
 
-				@Override
-				public void run() {
-					setPlaying(false);
-				}
-			});
+				SwingUtilities.invokeLater(new Runnable() {
+
+					@Override
+					public void run() {
+						setPlaying(false);
+					}
+				});
+
+			}
 
 			return null;
 

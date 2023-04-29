@@ -211,7 +211,7 @@ public abstract class FrameBuffer<F> {
 									buffer[i].state = BufferedFrame.PRE_PROCESSED;
 								}
 							} else {
-								System.err.println("Decode failed, end of video reached?");
+								// System.err.println("Decode failed, end of video reached?");
 								buffer[i].state = BufferedFrame.DECODE_FAILED;
 							}
 
