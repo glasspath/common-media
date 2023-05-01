@@ -95,7 +95,7 @@ public class FFVideoPlayer extends VideoPlayer {
 					}
 
 				} else {
-					new FFVideoPlayer(new Video(), true, false, 0);
+					new FFVideoPlayer(null, true, false, 0);
 				}
 
 			}

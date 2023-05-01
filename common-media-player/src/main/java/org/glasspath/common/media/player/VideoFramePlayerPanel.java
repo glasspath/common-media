@@ -38,9 +38,9 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 	public static final int STEP_FAST_FORWARD_REVERSE = 20;
 
 	protected final IVideoPlayer context;
-	protected final Video video;
 	protected final FramePanel framePanel;
 	private final Thread playbackThread;
+	private Video video = null;
 	private boolean playing = IVideoPlayer.DEFAULT_PLAYBACK_STATE_PLAYING;
 	private boolean repeatEnabled = true;
 	private long timestamp = 0 * 1000L;
@@ -48,10 +48,9 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 	private Loop loop = null;
 	private boolean exit = false;
 
-	public VideoFramePlayerPanel(IVideoPlayer context, Video video) {
+	public VideoFramePlayerPanel(IVideoPlayer context) {
 
 		this.context = context;
-		this.video = video;
 
 		framePanel = new FramePanel(context.getFrame(), context.getPreferences());
 
@@ -193,6 +192,42 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 	@Override
 	public void videoPlayerShown() {
 		playbackThread.start();
+	}
+
+	@Override
+	public void open(Video video) {
+
+		close();
+
+		resetView();
+
+		if (IVideoPlayer.DEFAULT_PLAYBACK_STATE_PLAYING) {
+			setPlaying(true);
+		}
+
+		this.video = video;
+
+	}
+
+	@Override
+	public void close() {
+
+		if (video != null) {
+
+			setPlaying(false);
+
+			timestamp = 0;
+			context.fireTimestampChanged(timestamp);
+
+			framePanel.setFrame(null);
+			framePanel.repaint();
+
+			context.fireVideoClosed(video != null ? video.getPath() : "");
+
+			video = null;
+
+		}
+
 	}
 
 	@Override

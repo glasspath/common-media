@@ -24,16 +24,61 @@ package org.glasspath.common.media.player.tools;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JMenuItem;
+import javax.swing.KeyStroke;
 
 import org.glasspath.common.media.player.IVideoPlayer;
+import org.glasspath.common.media.player.icons.Icons;
+import org.glasspath.common.media.video.Video;
+import org.glasspath.common.os.OsUtils;
+import org.glasspath.common.swing.file.chooser.FileChooser;
 import org.glasspath.common.swing.tools.AbstractTools;
 
 public class FileTools extends AbstractTools<IVideoPlayer> {
 
 	public FileTools(IVideoPlayer context) {
 		super(context, "File");
+
+		JMenuItem openMenuItem = new JMenuItem("Open");
+		menu.add(openMenuItem);
+		openMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, OsUtils.CTRL_OR_CMD_MASK));
+		openMenuItem.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				// TODO
+				List<String> extensions = new ArrayList<>();
+				extensions.add("mp4");
+				extensions.add("mkv");
+				extensions.add("asf");
+
+				// TODO: Create utility method that returns the selected File directly
+				String path = FileChooser.browseForFileWithExtensions(extensions, Icons.motionPlayBlue, false, context.getFrame(), context.getPreferences(), "lastOpenedFile");
+				if (path != null) {
+					File file = new File(path);
+					context.open(new Video(file.getName(), file.getAbsolutePath()));
+				}
+
+			}
+		});
+
+		JMenuItem closeMenuItem = new JMenuItem("Close");
+		menu.add(closeMenuItem);
+		closeMenuItem.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				context.close();
+			}
+		});
+
+		menu.addSeparator();
 
 		JMenuItem exitMenuItem = new JMenuItem("Exit");
 		menu.add(exitMenuItem);

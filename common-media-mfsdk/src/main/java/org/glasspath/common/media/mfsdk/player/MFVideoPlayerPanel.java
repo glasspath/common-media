@@ -281,6 +281,16 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 	}
 
 	@Override
+	public void open(Video video) {
+		// TODO
+	}
+
+	@Override
+	public void close() {
+		// TODO
+	}
+
+	@Override
 	public void setRepeatEnabled(boolean repeatEnabled) {
 		this.repeatEnabled = repeatEnabled;
 	}

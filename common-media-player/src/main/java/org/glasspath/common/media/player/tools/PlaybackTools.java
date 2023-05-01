@@ -138,9 +138,9 @@ public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 
 			@Override
 			public void playbackStateChanged(boolean playing) {
-				playPauseMenuItem.setText(context.getVideoPlayerPanel().isPlaying() ? "Pause" : "Play");
+				playPauseMenuItem.setText(context.getVideoPlayerPanel() != null && context.getVideoPlayerPanel().isPlaying() ? "Pause" : "Play");
 			}
-			
+
 			@Override
 			public void loopChanged(Loop loop) {
 				if (clearLoopMarkersMenuItem != null && exportLoopToGifMenuItem != null) {
@@ -149,7 +149,7 @@ public class PlaybackTools extends AbstractTools<IVideoPlayer> {
 				}
 			}
 		});
-		
+
 	}
 
 }

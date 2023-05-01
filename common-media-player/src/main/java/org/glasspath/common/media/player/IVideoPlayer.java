@@ -26,6 +26,7 @@ import java.util.prefs.Preferences;
 
 import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
+import org.glasspath.common.media.video.Video;
 import org.glasspath.common.swing.FrameContext;
 
 public interface IVideoPlayer extends FrameContext {
@@ -37,6 +38,10 @@ public interface IVideoPlayer extends FrameContext {
 	public ControlsBar getControlsBar();
 
 	public Preferences getPreferences();
+
+	public void open(Video video);
+
+	public void close();
 
 	public void addVideoPlayerListener(IVideoPlayerListener listener);
 

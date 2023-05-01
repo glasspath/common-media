@@ -26,11 +26,17 @@ import java.io.File;
 
 import javax.swing.JComponent;
 
+import org.glasspath.common.media.video.Video;
+
 public interface IVideoPlayerPanel {
 
 	public JComponent getComponent();
 
 	public void videoPlayerShown();
+
+	public void open(Video video);
+
+	public void close();
 
 	public void setRepeatEnabled(boolean repeatEnabled);
 

@@ -140,7 +140,21 @@ public abstract class FrameBuffer<F> {
 	}
 
 	public boolean isExited() {
-		return exit && true; // TODO?
+
+		if (exit) {
+
+			for (Thread thread : threads) {
+				if (thread.isAlive()) {
+					return false;
+				}
+			}
+
+			return true;
+
+		} else {
+			return false;
+		}
+
 	}
 
 	protected abstract BufferedFrame<F>[] createBuffer();

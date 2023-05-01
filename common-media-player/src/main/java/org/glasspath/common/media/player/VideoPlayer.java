@@ -92,7 +92,9 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 		}
 
 		// TODO
-		Mp4Utils.todoInspectVideoFile(video.getPath());
+		if (video != null) {
+			Mp4Utils.todoInspectVideoFile(video.getPath());
+		}
 
 		preferences = Preferences.userNodeForPackage(this.getClass());
 
@@ -102,7 +104,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 		viewTools = new ViewTools(this);
 
 		frame.setDefaultCloseOperation(exitOnClose ? JFrame.DO_NOTHING_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
-		frame.setTitle(video.getPath());
+		frame.setTitle(video != null ? video.getPath() : "");
 		frame.setIconImages(Icons.appIcon);
 		frame.setAlwaysOnTop(ViewTools.ALWAYS_ON_TOP_PREF.get(preferences));
 		frame.getContentPane().setBackground(Color.black);
@@ -181,6 +183,11 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 		addVideoPlayerListener(new VideoPlayerAdapter() {
 
 			@Override
+			public void videoOpened(String path) {
+				frame.setTitle(path);
+			}
+
+			@Override
 			public void playbackStateChanged(boolean playing) {
 				controlsBar.updateControls();
 			}
@@ -188,6 +195,12 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 			@Override
 			public void timestampChanged(long timestamp) {
 				controlsBar.repaintTimelineBar();
+			}
+
+			@Override
+			public void videoClosed(String path) {
+				frame.setTitle("");
+				clearLoopMarkers();
 			}
 		});
 
@@ -226,6 +239,20 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	@Override
 	public Preferences getPreferences() {
 		return preferences;
+	}
+
+	@Override
+	public void open(Video video) {
+		if (videoPlayerPanel != null) {
+			videoPlayerPanel.open(video);
+		}
+	}
+
+	@Override
+	public void close() {
+		if (videoPlayerPanel != null) {
+			videoPlayerPanel.close();
+		}
 	}
 
 	public boolean isExitOnClose() {

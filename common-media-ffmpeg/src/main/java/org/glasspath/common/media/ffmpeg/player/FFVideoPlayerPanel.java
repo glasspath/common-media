@@ -43,6 +43,8 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 	public static boolean TODO_DEBUG = false;
 	public static boolean TODO_TEST_QSV_DECODER = false;
+	public static int TODO_PRE_PROCESSOR_COUNT = 1;
+	public static int TODO_POST_PROCESSOR_COUNT = 0;
 
 	static {
 		if (!TODO_DEBUG) {
@@ -55,8 +57,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	public static final int END_OF_VIDEO_REACHED_MARGIN = 30 * 33333;
 
 	private final FFBufferedFrame[] buffer;
-	private final FrameBuffer<org.bytedeco.javacv.Frame> frameBuffer;
-	private final FFVideoFrameConverter frameConverter = new FFVideoFrameConverter();
+	private FFFrameBuffer frameBuffer = null;
 	private long duration = 0L;
 	private double frameRate = 0.0;
 	private int interval = 0;
@@ -65,293 +66,74 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	private boolean exit = false;
 
 	public FFVideoPlayerPanel(IVideoPlayer context, Video video) {
-		super(context, video);
+		super(context);
 
 		buffer = new FFBufferedFrame[FRAME_BUFFER_SIZE];
 		for (int i = 0; i < buffer.length; i++) {
 			buffer[i] = new FFBufferedFrame();
 		}
 
-		int preProcessorCount = 1;
-		// String preProcessorFilter = "eq=brightness=0.5"; // Not working, requires GPL build of FFmpeg
-		// String preProcessorFilter = "colorlevels=romin=0.5:gomin=0.5:bomin=0.75";
-		// String preProcessorFilter = "colorkey=green";
-		// String preProcessorFilter = "colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131";
-		// String preProcessorFilter = "curves=preset=vintage";
-		// String preProcessorFilter = "curves=blue='0/0 0.5/0.58 1/1'";
-		// String preProcessorFilter = "colorlevels=rimin=0.039:gimin=0.039:bimin=0.039:rimax=0.96:gimax=0.96:bimax=0.96";
-		// String preProcessorFilter = "colorcontrast=rc=1.0:rcw=1.0:gm=1.0:gmw=1.0:by=1.0:byw=1.0:pl=1.0";
-		String preProcessorFilter = "colorlevels=rimin=0.039:gimin=0.039:bimin=0.039:rimax=0.96:gimax=0.96:bimax=0.96,colorcontrast=rc=1.0:rcw=1.0:gm=1.0:gmw=1.0:by=1.0:byw=1.0:pl=1.0";
+		if (video != null) {
 
-		int postProcessorCount = 0;
-		ContrastFilter contrastFilter = new ContrastFilter();
-		contrastFilter.setBrightness(1.5F);
-		contrastFilter.setContrast(2.0F);
+			SwingUtilities.invokeLater(new Runnable() {
 
-		frameBuffer = new FrameBuffer<org.bytedeco.javacv.Frame>(1, preProcessorCount, 1, postProcessorCount) {
-
-			private FFmpegFrameGrabber frameGrabber = null;
-			private int frameGrabberState = 0;
-			private FFmpegFrameFilter[] frameFilters = new FFmpegFrameFilter[preProcessorCount];
-
-			@Override
-			protected BufferedFrame<org.bytedeco.javacv.Frame>[] createBuffer() {
-				return buffer;
-			}
-
-			@Override
-			protected boolean createDecoder(int thread) {
-
-				frameGrabber = new FFmpegFrameGrabber(video.getPath());
-				// frameGrabber.setVideoCodecName("h264_cuvid");
-				if (TODO_TEST_QSV_DECODER) {
-					frameGrabber.setVideoCodecName("h264_qsv");
+				@Override
+				public void run() {
+					open(video);
 				}
+			});
 
-				// frameGrabber.setImageMode(ImageMode.RAW);
-				// frameGrabber.setOption("hwaccel", "videotoolbox");
-				// frameGrabber.setOption("hwaccel", "cuvid");
-				// frameGrabber.setOption("hwaccel", "h264_videotoolbox");
-				// frameGrabber.setOption("hwaccel", "h264_cuvid");
-				// frameGrabber.setOption("hwaccel", "vp8");
+		}
 
-				// frameGrabber.setOption("hwaccel", "cuvid");
-				// frameGrabber.setVideoCodecName("h264_cuvid");
-				// frameGrabber.setVideoCodec(org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H264);
+	}
 
-				// frameGrabber.setVideoOption("threads", "1");
-				// --enable-dxva2
-				// frameGrabber.setOption("-enable-dxva2", ""); //Attempt to add --enable-dxva2 option
-				// frameGrabber.setOption("hwaccel", "dxva2");
-				// frameGrabber.setPixelFormat(org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_DXVA2_VLD);
+	@Override
+	public void open(Video video) {
+		super.open(video);
 
-				// frameGrabber.setImageScalingFlags(org.bytedeco.ffmpeg.global.swscale.SWS_FAST_BILINEAR);
+		frameBuffer = new FFFrameBuffer(video);
+		frameBuffer.start();
 
-				// TODO
-				// int cores = Runtime.getRuntime().availableProcessors(); // Includes hyper threading cores
-				// int threads = cores + 1;
-				// System.out.println("Setting threads option to: " + threads);
-				// frameGrabber.setVideoOption("threads", "" + threads);
-				// frameGrabber.setVideoOption("threads", "" + 4);
+	}
 
-				try {
+	@Override
+	public void close() {
+		super.close();
 
-					frameGrabber.start();
+		if (frameBuffer != null) {
 
-					context.fireVideoOpened(video.getPath());
+			if (!frameBuffer.isExited()) {
 
-					duration = frameGrabber.getLengthInTime();
-					frameRate = frameGrabber.getFrameRate();
+				frameBuffer.reset();
+				frameBuffer.resume();
 
-					if (TODO_TEST_QSV_DECODER) {
-						duration /= 10;
-					}
+				frameBuffer.exit();
 
-					if (TODO_DEBUG) {
-						System.out.println("FFVideoPlayerPanel, video codec: " + frameGrabber.getVideoCodecName());
-						System.out.println("FFVideoPlayerPanel, duration: " + duration);
-						System.out.println("FFVideoPlayerPanel, frameRate: " + frameRate);
-					}
+				while (!frameBuffer.isExited()) {
 
-					if (frameRate > 1) {
-						interval = (int) (1000 / frameRate) - 1; // TODO: Added -1 as a test to get closer to the desired fps
-					} else {
-						interval = -1;
-					}
-
-					/*
-					final double scale = (getWidth() - 30) / 1280.0;
-					final int width = (int)(1280 * scale);
-					final int height = (int)(720 * scale);
-					
-					frameGrabber.setImageWidth(width);
-					frameGrabber.setImageHeight(height);
-					 */
-
-					if (interval > 0) {
-						frameGrabberState = 1;
-					} else {
-						frameGrabberState = -1;
-					}
-
-					return frameGrabberState == 1;
-
-				} catch (Exception e) {
-					e.printStackTrace();
-					context.fireVideoClosed(video.getPath());
-				}
-
-				return false;
-
-			}
-
-			@Override
-			protected long getDecoderTimestamp(int thread, org.bytedeco.javacv.Frame source) {
-				if (TODO_TEST_QSV_DECODER) {
-					return frameGrabber.getTimestamp() / 1000;
-				} else {
-					return frameGrabber.getTimestamp();
-				}
-			}
-
-			@Override
-			protected void setDecoderTimestamp(int thread, long timestamp) {
-				try {
-					if (TODO_TEST_QSV_DECODER) {
-						frameGrabber.setVideoTimestamp(timestamp / 10000);
-					} else {
-						frameGrabber.setVideoTimestamp(timestamp);
-					}
-				} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e) {
-					e.printStackTrace();
-				}
-			}
-
-			@Override
-			protected org.bytedeco.javacv.Frame decode(int thread) {
-
-				org.bytedeco.javacv.Frame frame = decodeFrame(thread);
-
-				if (frame == null) {
-
-					// TODO: Is there a better way to check if we are at the end of the video?
-					if (getDecoderTimestamp(thread, null) > duration - END_OF_VIDEO_REACHED_MARGIN) {
-						setDecoderTimestamp(thread, 0);
-					}
-
-					if (isRepeatEnabled()) {
-						frame = decodeFrame(thread);
-					} else {
-						// Returning null will result in DECODE_FAILED which will cause the player to stop
-					}
-
-				}
-
-				return frame;
-
-			}
-
-			private org.bytedeco.javacv.Frame decodeFrame(int thread) {
-				try {
-					org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
-					if (frame != null && frame.image != null) {
-						return frame.clone(); // FFmpegFrameGrabber returns same instance each time, so for buffering we need to clone
-					}
-				} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e) {
-					e.printStackTrace();
-				}
-				return null;
-			}
-
-			@Override
-			protected void closeDecoder(int thread) {
-				if (frameGrabber != null) {
 					try {
-						frameGrabber.close();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}
-
-			@Override
-			protected boolean createPreProcessor(int thread) {
-
-				while (frameGrabberState == 0) {
-					try {
-						Thread.sleep(1);
+						Thread.sleep(10);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
-				}
-
-				if (frameGrabber != null && thread >= 0 && thread < frameFilters.length) {
-
-					try {
-
-						frameFilters[thread] = new FFmpegFrameFilter(preProcessorFilter, frameGrabber.getImageWidth(), frameGrabber.getImageHeight());
-						frameFilters[thread].setPixelFormat(frameGrabber.getPixelFormat());
-						frameFilters[thread].start();
-
-						return true;
-
-					} catch (org.bytedeco.javacv.FFmpegFrameFilter.Exception e) {
-						e.printStackTrace();
-					}
 
 				}
 
-				frameFilters[thread] = null;
-
-				// TODO? We prefer to continue (but without actually filtering)
-				return true;
-
 			}
 
-			@Override
-			protected org.bytedeco.javacv.Frame preProcess(int thread, org.bytedeco.javacv.Frame frame) {
+			frameBuffer = null;
 
-				if (frameFilters[thread] != null) {
+		}
 
-					try {
-						frameFilters[thread].push(frame);
-						org.bytedeco.javacv.Frame f = frameFilters[thread].pull();
-						if (f != null) {
-							return f.clone();
-						}
-					} catch (org.bytedeco.javacv.FFmpegFrameFilter.Exception e) {
-						e.printStackTrace();
-					}
+		for (int i = 0; i < buffer.length; i++) {
+			buffer[i].reset();
+		}
 
-				}
-
-				return frame;
-
-			}
-
-			@Override
-			protected void closePreProcessor(int thread) {
-				if (frameFilters[thread] != null) {
-					try {
-						frameFilters[thread].close();
-					} catch (org.bytedeco.javacv.FrameFilter.Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}
-
-			@Override
-			protected boolean createConverter(int thread) {
-				return frameConverter != null;
-			}
-
-			@Override
-			protected BufferedImage convert(int thread, org.bytedeco.javacv.Frame source) {
-				return frameConverter.createBufferedImage(source);
-			}
-
-			@Override
-			protected void closeConverter(int thread) {
-
-			}
-
-			@Override
-			protected boolean createPostProcessor(int thread) {
-				return true;
-			}
-
-			@Override
-			protected void postProcess(int thread, BufferedImage image) {
-				if (image != null) { // TODO: Shouldn't be possible..
-					// contrastFilter.filter(image, image);
-				}
-			}
-
-			@Override
-			protected void closePostProcessor(int thread) {
-
-			}
-		};
+		duration = 0L;
+		frameRate = 0.0;
+		interval = 0;
+		bufferIndex = 0;
+		decodeFailedCount = 0;
 
 	}
 
@@ -411,29 +193,6 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	}
 
 	@Override
-	public void videoPlayerShown() {
-		super.videoPlayerShown();
-		frameBuffer.start();
-	}
-
-	@Override
-	public void setPlaying(boolean playing) {
-		super.setPlaying(playing);
-
-		/*
-		if (playing) {
-		
-			frameBuffer.reset();
-			frameBuffer.seek(getTimestamp());
-			bufferIndex = 0;
-			frameBuffer.resume();
-		
-		}
-		 */
-
-	}
-
-	@Override
 	public void setTimestamp(long timestamp, boolean play) {
 
 		frameBuffer.reset();
@@ -455,13 +214,313 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 		exit = true;
 
-		frameBuffer.exit();
+		if (frameBuffer != null) {
+			frameBuffer.exit();
+		}
 
 	}
 
 	@Override
 	public boolean isExited() {
 		return super.isExited() && exit && (frameBuffer == null || frameBuffer.isExited()); // TODO?
+	}
+
+	private class FFFrameBuffer extends FrameBuffer<org.bytedeco.javacv.Frame> {
+
+		// TODO
+		// private final String preProcessorFilter = "eq=brightness=0.5"; // Not working, requires GPL build of FFmpeg
+		// private final String preProcessorFilter = "colorlevels=romin=0.5:gomin=0.5:bomin=0.75";
+		// private final String preProcessorFilter = "colorkey=green";
+		// private final String preProcessorFilter = "colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131";
+		// private final String preProcessorFilter = "curves=preset=vintage";
+		// private final String preProcessorFilter = "curves=blue='0/0 0.5/0.58 1/1'";
+		// private final String preProcessorFilter = "colorlevels=rimin=0.039:gimin=0.039:bimin=0.039:rimax=0.96:gimax=0.96:bimax=0.96";
+		// private final String preProcessorFilter = "colorcontrast=rc=1.0:rcw=1.0:gm=1.0:gmw=1.0:by=1.0:byw=1.0:pl=1.0";
+		private final String preProcessorFilter = "colorlevels=rimin=0.039:gimin=0.039:bimin=0.039:rimax=0.96:gimax=0.96:bimax=0.96,colorcontrast=rc=1.0:rcw=1.0:gm=1.0:gmw=1.0:by=1.0:byw=1.0:pl=1.0";
+		private final ContrastFilter contrastFilter;
+
+		private final Video video;
+		private final FFVideoFrameConverter frameConverter;
+		private final FFmpegFrameFilter[] frameFilters;
+		private FFmpegFrameGrabber frameGrabber = null;
+		private int frameGrabberState = 0;
+
+		private FFFrameBuffer(Video video) {
+			super(1, TODO_PRE_PROCESSOR_COUNT, 1, TODO_POST_PROCESSOR_COUNT);
+
+			this.video = video;
+			this.frameConverter = new FFVideoFrameConverter();
+			this.frameFilters = new FFmpegFrameFilter[TODO_PRE_PROCESSOR_COUNT];
+
+			// TODO
+			if (TODO_POST_PROCESSOR_COUNT > 0) {
+				contrastFilter = new ContrastFilter();
+				contrastFilter.setBrightness(1.5F);
+				contrastFilter.setContrast(2.0F);
+			} else {
+				contrastFilter = null;
+			}
+
+		}
+
+		@Override
+		protected BufferedFrame<org.bytedeco.javacv.Frame>[] createBuffer() {
+			return buffer;
+		}
+
+		@Override
+		protected boolean createDecoder(int thread) {
+
+			frameGrabber = new FFmpegFrameGrabber(video.getPath());
+			// frameGrabber.setVideoCodecName("h264_cuvid");
+			if (TODO_TEST_QSV_DECODER) {
+				frameGrabber.setVideoCodecName("h264_qsv");
+			}
+
+			// frameGrabber.setImageMode(ImageMode.RAW);
+			// frameGrabber.setOption("hwaccel", "videotoolbox");
+			// frameGrabber.setOption("hwaccel", "cuvid");
+			// frameGrabber.setOption("hwaccel", "h264_videotoolbox");
+			// frameGrabber.setOption("hwaccel", "h264_cuvid");
+			// frameGrabber.setOption("hwaccel", "vp8");
+
+			// frameGrabber.setOption("hwaccel", "cuvid");
+			// frameGrabber.setVideoCodecName("h264_cuvid");
+			// frameGrabber.setVideoCodec(org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H264);
+
+			// frameGrabber.setVideoOption("threads", "1");
+			// --enable-dxva2
+			// frameGrabber.setOption("-enable-dxva2", ""); //Attempt to add --enable-dxva2 option
+			// frameGrabber.setOption("hwaccel", "dxva2");
+			// frameGrabber.setPixelFormat(org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_DXVA2_VLD);
+
+			// frameGrabber.setImageScalingFlags(org.bytedeco.ffmpeg.global.swscale.SWS_FAST_BILINEAR);
+
+			// TODO
+			// int cores = Runtime.getRuntime().availableProcessors(); // Includes hyper threading cores
+			// int threads = cores + 1;
+			// System.out.println("Setting threads option to: " + threads);
+			// frameGrabber.setVideoOption("threads", "" + threads);
+			// frameGrabber.setVideoOption("threads", "" + 4);
+
+			try {
+
+				frameGrabber.start();
+
+				context.fireVideoOpened(video.getPath());
+
+				duration = frameGrabber.getLengthInTime();
+				frameRate = frameGrabber.getFrameRate();
+
+				if (TODO_TEST_QSV_DECODER) {
+					duration /= 10;
+				}
+
+				if (TODO_DEBUG) {
+					System.out.println("FFVideoPlayerPanel, video codec: " + frameGrabber.getVideoCodecName());
+					System.out.println("FFVideoPlayerPanel, duration: " + duration);
+					System.out.println("FFVideoPlayerPanel, frameRate: " + frameRate);
+				}
+
+				if (frameRate > 1) {
+					interval = (int) (1000 / frameRate) - 1; // TODO: Added -1 as a test to get closer to the desired fps
+				} else {
+					interval = -1;
+				}
+
+				/*
+				final double scale = (getWidth() - 30) / 1280.0;
+				final int width = (int)(1280 * scale);
+				final int height = (int)(720 * scale);
+				
+				frameGrabber.setImageWidth(width);
+				frameGrabber.setImageHeight(height);
+				 */
+
+				if (interval > 0) {
+					frameGrabberState = 1;
+				} else {
+					frameGrabberState = -1;
+				}
+
+				return frameGrabberState == 1;
+
+			} catch (Exception e) {
+				e.printStackTrace();
+				context.fireVideoClosed(video.getPath());
+			}
+
+			return false;
+
+		}
+
+		@Override
+		protected long getDecoderTimestamp(int thread, org.bytedeco.javacv.Frame source) {
+			if (TODO_TEST_QSV_DECODER) {
+				return frameGrabber.getTimestamp() / 1000;
+			} else {
+				return frameGrabber.getTimestamp();
+			}
+		}
+
+		@Override
+		protected void setDecoderTimestamp(int thread, long timestamp) {
+			try {
+				if (TODO_TEST_QSV_DECODER) {
+					frameGrabber.setVideoTimestamp(timestamp / 10000);
+				} else {
+					frameGrabber.setVideoTimestamp(timestamp);
+				}
+			} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		@Override
+		protected org.bytedeco.javacv.Frame decode(int thread) {
+
+			org.bytedeco.javacv.Frame frame = decodeFrame(thread);
+
+			if (frame == null) {
+
+				// TODO: Is there a better way to check if we are at the end of the video?
+				if (getDecoderTimestamp(thread, null) > duration - END_OF_VIDEO_REACHED_MARGIN) {
+					setDecoderTimestamp(thread, 0);
+				}
+
+				if (isRepeatEnabled()) {
+					frame = decodeFrame(thread);
+				} else {
+					// Returning null will result in DECODE_FAILED which will cause the player to stop
+				}
+
+			}
+
+			return frame;
+
+		}
+
+		private org.bytedeco.javacv.Frame decodeFrame(int thread) {
+			try {
+				org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
+				if (frame != null && frame.image != null) {
+					return frame.clone(); // FFmpegFrameGrabber returns same instance each time, so for buffering we need to clone
+				}
+			} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+		@Override
+		protected void closeDecoder(int thread) {
+			if (frameGrabber != null) {
+				try {
+					frameGrabber.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		@Override
+		protected boolean createPreProcessor(int thread) {
+
+			while (frameGrabberState == 0) {
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+
+			if (frameGrabber != null && thread >= 0 && thread < frameFilters.length) {
+
+				try {
+
+					frameFilters[thread] = new FFmpegFrameFilter(preProcessorFilter, frameGrabber.getImageWidth(), frameGrabber.getImageHeight());
+					frameFilters[thread].setPixelFormat(frameGrabber.getPixelFormat());
+					frameFilters[thread].start();
+
+					return true;
+
+				} catch (org.bytedeco.javacv.FFmpegFrameFilter.Exception e) {
+					e.printStackTrace();
+				}
+
+			}
+
+			frameFilters[thread] = null;
+
+			// TODO? We prefer to continue (but without actually filtering)
+			return true;
+
+		}
+
+		@Override
+		protected org.bytedeco.javacv.Frame preProcess(int thread, org.bytedeco.javacv.Frame frame) {
+
+			if (frameFilters[thread] != null) {
+
+				try {
+					frameFilters[thread].push(frame);
+					org.bytedeco.javacv.Frame f = frameFilters[thread].pull();
+					if (f != null) {
+						return f.clone();
+					}
+				} catch (org.bytedeco.javacv.FFmpegFrameFilter.Exception e) {
+					e.printStackTrace();
+				}
+
+			}
+
+			return frame;
+
+		}
+
+		@Override
+		protected void closePreProcessor(int thread) {
+			if (frameFilters[thread] != null) {
+				try {
+					frameFilters[thread].close();
+				} catch (org.bytedeco.javacv.FrameFilter.Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		@Override
+		protected boolean createConverter(int thread) {
+			return frameConverter != null;
+		}
+
+		@Override
+		protected BufferedImage convert(int thread, org.bytedeco.javacv.Frame source) {
+			return frameConverter.createBufferedImage(source);
+		}
+
+		@Override
+		protected void closeConverter(int thread) {
+
+		}
+
+		@Override
+		protected boolean createPostProcessor(int thread) {
+			return true;
+		}
+
+		@Override
+		protected void postProcess(int thread, BufferedImage image) {
+			if (image != null) { // TODO: Shouldn't be possible..
+				// contrastFilter.filter(image, image);
+			}
+		}
+
+		@Override
+		protected void closePostProcessor(int thread) {
+
+		}
+
 	}
 
 	public static class FFBufferedFrame extends BufferedFrame<org.bytedeco.javacv.Frame> {

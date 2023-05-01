@@ -61,7 +61,7 @@ public class FramePanel extends JPanel {
 
 	public static boolean TODO_DEBUG = false;
 
-	public static boolean TODO_TEST_OVERLAY = true;
+	public static boolean TODO_TEST_OVERLAY = false;
 
 	public static final double MIN_SCALE = 0.1;
 	public static final double MAX_SCALE = 25.0;
