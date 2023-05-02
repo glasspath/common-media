@@ -102,8 +102,6 @@ public abstract class EvrCanvasPanel extends JPanel {
 
 					setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
 
-				} else if (SwingUtilities.isRightMouseButton(e)) {
-					createMenu().getPopupMenu().show(EvrCanvasPanel.this, e.getPoint().x, e.getPoint().y);
 				}
 
 			}
@@ -327,24 +325,6 @@ public abstract class EvrCanvasPanel extends JPanel {
 
 		}
 
-	}
-
-	public JMenu createMenu() {
-
-		JMenu menu = prepareMenu();
-
-		// TODO
-
-		menu.add(createZoomMenu());
-		menu.addSeparator();
-		menu.add(createResetViewMenuItem());
-
-		return menu;
-
-	}
-
-	public JMenu prepareMenu() {
-		return new JMenu();
 	}
 
 	public JMenu createZoomMenu() {

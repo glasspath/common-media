@@ -26,6 +26,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -33,8 +35,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
 
+import javax.swing.Action;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.SwingUtilities;
 
 import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.media.player.IVideoPlayerPanel.GifExportRequest;
@@ -219,6 +224,29 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
 			videoPlayerPanel.setOverlay(overlay);
 			videoPlayerPanel.setOverlayVisible(ViewTools.SHOW_OVERLAY_PREF.get(preferences));
+
+			// TODO: Make editOverlayAction configurable?
+			videoPlayerPanel.populateViewMenu(viewTools.getMenu(), null);
+
+			videoPlayerPanel.getComponent().addMouseListener(new MouseAdapter() {
+
+				@Override
+				public void mousePressed(MouseEvent e) {
+
+					if (SwingUtilities.isRightMouseButton(e)) {
+
+						JMenu menu = new JMenu();
+						menu.add(ViewTools.createAlwaysOnTopMenuItem(VideoPlayer.this));
+
+						// TODO: Make editOverlayAction configurable?
+						videoPlayerPanel.populateViewMenu(menu, null);
+
+						menu.getPopupMenu().show(videoPlayerPanel.getComponent(), e.getPoint().x, e.getPoint().y);
+
+					}
+
+				}
+			});
 
 		}
 

@@ -25,12 +25,14 @@ package org.glasspath.common.media.player.tools;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.util.prefs.Preferences;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 
 import org.glasspath.common.media.player.IVideoPlayer;
+import org.glasspath.common.media.player.IVideoPlayerPanel;
 import org.glasspath.common.os.OsUtils;
 import org.glasspath.common.os.preferences.BoolPref;
 import org.glasspath.common.swing.tools.AbstractTools;
@@ -43,8 +45,15 @@ public class ViewTools extends AbstractTools<IVideoPlayer> {
 	public ViewTools(IVideoPlayer context) {
 		super(context, "View");
 
-		JCheckBoxMenuItem alwaysOnTopMenuItem = new JCheckBoxMenuItem("Always on Top"); // TODO
-		menu.add(alwaysOnTopMenuItem);
+		menu.add(createAlwaysOnTopMenuItem(context));
+
+		// Rest of menu is populated after IVideoPlayerPanel is created
+
+	}
+
+	public static JCheckBoxMenuItem createAlwaysOnTopMenuItem(IVideoPlayer context) {
+
+		JCheckBoxMenuItem alwaysOnTopMenuItem = new JCheckBoxMenuItem("Always on Top");
 		alwaysOnTopMenuItem.setSelected(ALWAYS_ON_TOP_PREF.get(context.getPreferences()));
 		alwaysOnTopMenuItem.addActionListener(new ActionListener() {
 
@@ -54,38 +63,45 @@ public class ViewTools extends AbstractTools<IVideoPlayer> {
 				ALWAYS_ON_TOP_PREF.put(context.getPreferences(), alwaysOnTopMenuItem.isSelected());
 			}
 		});
-		context.getFrame().setAlwaysOnTop(alwaysOnTopMenuItem.isSelected());
 
-		menu.addSeparator();
+		return alwaysOnTopMenuItem;
 
-		JMenuItem resetViewMenuItem = new JMenuItem("Reset View");
-		menu.add(resetViewMenuItem);
-		resetViewMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_0, OsUtils.CTRL_OR_CMD_MASK));
-		resetViewMenuItem.addActionListener(new ActionListener() {
+	}
 
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (context.getVideoPlayerPanel() != null) {
-					context.getVideoPlayerPanel().resetView();
-				}
-			}
-		});
+	public static JCheckBoxMenuItem createShowOverlayMenuItem(IVideoPlayerPanel videoPlayerPanel, Preferences preferences) {
 
 		JCheckBoxMenuItem showOverlayMenuItem = new JCheckBoxMenuItem("Show overlay");
-		menu.add(showOverlayMenuItem);
-		showOverlayMenuItem.setSelected(SHOW_OVERLAY_PREF.get(context.getPreferences()));
+		showOverlayMenuItem.setSelected(SHOW_OVERLAY_PREF.get(preferences));
 		showOverlayMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_9, OsUtils.CTRL_OR_CMD_MASK));
 		showOverlayMenuItem.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (context.getVideoPlayerPanel() != null) {
-					context.getVideoPlayerPanel().setOverlayVisible(showOverlayMenuItem.isSelected());
-					context.getVideoPlayerPanel().getComponent().repaint();
-				}
-				SHOW_OVERLAY_PREF.put(context.getPreferences(), showOverlayMenuItem.isSelected());
+				videoPlayerPanel.setOverlayVisible(showOverlayMenuItem.isSelected());
+				videoPlayerPanel.getComponent().repaint();
+				SHOW_OVERLAY_PREF.put(preferences, showOverlayMenuItem.isSelected());
 			}
 		});
+
+		// TODO: Listen for changes and update menu item
+
+		return showOverlayMenuItem;
+
+	}
+
+	public static JMenuItem createResetViewMenuItem(IVideoPlayerPanel videoPlayerPanel) {
+
+		JMenuItem resetViewMenuItem = new JMenuItem("Reset View");
+		resetViewMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_0, OsUtils.CTRL_OR_CMD_MASK));
+		resetViewMenuItem.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				videoPlayerPanel.resetView();
+			}
+		});
+
+		return resetViewMenuItem;
 
 	}
 

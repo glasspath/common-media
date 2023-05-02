@@ -22,9 +22,9 @@
  */
 package org.glasspath.common.media.player;
 
+import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 
 public interface IVideoPreviewPanel {
 
@@ -37,6 +37,12 @@ public interface IVideoPreviewPanel {
 
 	public JComponent getComponent();
 
+	public void populateViewMenu(JMenu menu, Action editOverlayAction);
+
+	public IOverlay getOverlay();
+
+	public void setOverlay(IOverlay overlay);
+
 	public boolean isPreviewEnabled();
 
 	public void setPreviewEnabled(boolean previewEnabled);
@@ -44,11 +50,5 @@ public interface IVideoPreviewPanel {
 	public void start();
 
 	public void close();
-
-	public JMenu createMenu();
-
-	public JMenu createZoomMenu();
-
-	public JMenuItem createResetViewMenuItem();
 
 }

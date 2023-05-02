@@ -24,13 +24,17 @@ package org.glasspath.common.media.player;
 
 import java.io.File;
 
+import javax.swing.Action;
 import javax.swing.JComponent;
+import javax.swing.JMenu;
 
 import org.glasspath.common.media.video.Video;
 
 public interface IVideoPlayerPanel {
 
 	public JComponent getComponent();
+
+	public void populateViewMenu(JMenu menu, Action editOverlayAction);
 
 	public void videoPlayerShown();
 

@@ -25,9 +25,9 @@ package org.glasspath.common.media.mfsdk.player;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
 import org.glasspath.common.media.h264.H264NalUnit;
@@ -35,6 +35,7 @@ import org.glasspath.common.media.mfsdk.EvrCanvas.PlayerBufferingState;
 import org.glasspath.common.media.mfsdk.EvrCanvas.PlayerInstanceState;
 import org.glasspath.common.media.mfsdk.EvrCanvasPanel;
 import org.glasspath.common.media.mfsdk.MFUtils;
+import org.glasspath.common.media.player.IOverlay;
 import org.glasspath.common.media.player.IVideoPlayerListener;
 import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.media.player.IVideoPreviewPanel;
@@ -169,6 +170,25 @@ public abstract class MFVideoPreviewPanel extends EvrCanvasPanel implements IVid
 	}
 
 	@Override
+	public void populateViewMenu(JMenu menu, Action editOverlayAction) {
+
+		menu.add(createZoomMenu());
+		menu.addSeparator();
+		menu.add(createResetViewMenuItem());
+		
+	}
+	
+	@Override
+	public IOverlay getOverlay() {
+		return null; // TODO
+	}
+
+	@Override
+	public void setOverlay(IOverlay overlay) {
+		// TODO
+	}
+
+	@Override
 	public boolean isPreviewEnabled() {
 		return previewEnabled;
 	}
@@ -294,21 +314,6 @@ public abstract class MFVideoPreviewPanel extends EvrCanvasPanel implements IVid
 
 		evrCanvas.setVisible(false);
 
-	}
-
-	@Override
-	public JMenu createMenu() {
-		return super.createMenu();
-	}
-
-	@Override
-	public JMenu createZoomMenu() {
-		return super.createZoomMenu();
-	}
-
-	@Override
-	public JMenuItem createResetViewMenuItem() {
-		return super.createResetViewMenuItem();
 	}
 
 }

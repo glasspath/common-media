@@ -26,9 +26,12 @@ import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.KeyEvent;
 
+import javax.swing.Action;
 import javax.swing.JComponent;
+import javax.swing.JMenu;
 import javax.swing.SwingUtilities;
 
+import org.glasspath.common.media.player.tools.ViewTools;
 import org.glasspath.common.media.video.Frame;
 import org.glasspath.common.media.video.Video;
 import org.glasspath.common.swing.SwingUtils;
@@ -52,7 +55,7 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 		this.context = context;
 
-		framePanel = new FramePanel(context.getFrame(), context.getPreferences());
+		framePanel = new FramePanel();
 
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
 
@@ -192,6 +195,22 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 	@Override
 	public JComponent getComponent() {
 		return framePanel;
+	}
+
+	@Override
+	public void populateViewMenu(JMenu menu, Action editOverlayAction) {
+
+		menu.addSeparator(); // TODO
+		menu.add(framePanel.createZoomMenu());
+		menu.add(framePanel.createRotateMenu());
+		menu.add(framePanel.createFlipMenu());
+		menu.addSeparator();
+		menu.add(ViewTools.createShowOverlayMenuItem(this, context.getPreferences()));
+		if (editOverlayAction != null) {
+			menu.add(editOverlayAction);
+		}
+		menu.add(ViewTools.createResetViewMenuItem(this));
+
 	}
 
 	@Override

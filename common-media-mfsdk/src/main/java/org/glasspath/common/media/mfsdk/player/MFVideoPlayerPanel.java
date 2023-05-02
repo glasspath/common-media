@@ -36,6 +36,7 @@ import java.io.IOException;
 import javax.imageio.IIOException;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
+import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
@@ -274,6 +275,16 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 	@Override
 	public JComponent getComponent() {
 		return this;
+	}
+
+	@Override
+	public void populateViewMenu(JMenu menu, Action editOverlayAction) {
+
+		menu.addSeparator(); // TODO
+		menu.add(createZoomMenu());
+		menu.addSeparator();
+		menu.add(createResetViewMenuItem());
+
 	}
 
 	@Override
@@ -768,17 +779,6 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 		}
 
 		evrCanvas.setVisible(false);
-
-	}
-
-	@Override
-	public JMenu prepareMenu() {
-
-		JMenu menu = super.prepareMenu();
-
-		// TODO?
-
-		return menu;
 
 	}
 

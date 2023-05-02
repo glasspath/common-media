@@ -39,7 +39,6 @@ import java.util.prefs.Preferences;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -49,6 +48,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
+import org.glasspath.common.media.player.tools.ViewTools;
 import org.glasspath.common.media.video.Frame;
 import org.glasspath.common.os.OsUtils;
 
@@ -60,8 +60,6 @@ public class FramePanel extends JPanel {
 	public static final double MIN_SCALE = 0.1;
 	public static final double MAX_SCALE = 25.0;
 
-	private final JFrame parentFrame;
-	private final Preferences preferences;
 	private Frame frame = null;
 	private IOverlay overlay = null;
 	private boolean overlayVisible = true;
@@ -80,17 +78,6 @@ public class FramePanel extends JPanel {
 	private long lastFpsMeasurement = 0;
 
 	public FramePanel() {
-		this(null, null);
-	}
-
-	public FramePanel(Preferences preferences) {
-		this(null, preferences);
-	}
-
-	public FramePanel(JFrame parentFrame, Preferences preferences) {
-
-		this.parentFrame = parentFrame;
-		this.preferences = preferences;
 
 		MouseAdapter mouseListener = new MouseAdapter() {
 
@@ -110,8 +97,6 @@ public class FramePanel extends JPanel {
 
 					setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
 
-				} else if (SwingUtilities.isRightMouseButton(e)) {
-					createMenu().getPopupMenu().show(FramePanel.this, e.getPoint().x, e.getPoint().y);
 				}
 
 			}
@@ -421,47 +406,6 @@ public class FramePanel extends JPanel {
 
 	}
 
-	public JMenu createMenu() {
-
-		JMenu menu = prepareMenu();
-
-		if (parentFrame != null && preferences != null) {
-			menu.add(createAlwaysOnTopMenuItem());
-			menu.addSeparator();
-		}
-
-		menu.add(createZoomMenu());
-		menu.add(createRotateMenu());
-		menu.add(createFlipMenu());
-		menu.addSeparator();
-		menu.add(createResetViewMenuItem());
-
-		return menu;
-
-	}
-
-	public JMenu prepareMenu() {
-		return new JMenu();
-	}
-
-	public JMenuItem createAlwaysOnTopMenuItem() {
-
-		JCheckBoxMenuItem alwaysOnTopMenuItem = new JCheckBoxMenuItem("Always on Top");
-		alwaysOnTopMenuItem.setSelected(preferences.getBoolean("alwaysOnTop", false));
-		alwaysOnTopMenuItem.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				parentFrame.setAlwaysOnTop(!parentFrame.isAlwaysOnTop());
-				preferences.putBoolean("alwaysOnTop", parentFrame.isAlwaysOnTop());
-				alwaysOnTopMenuItem.setSelected(parentFrame.isAlwaysOnTop());
-			}
-		});
-
-		return alwaysOnTopMenuItem;
-
-	}
-
 	public JMenu createZoomMenu() {
 
 		JMenu zoomMenu = new JMenu("Zoom");
@@ -682,6 +626,27 @@ public class FramePanel extends JPanel {
 		});
 
 		return flipMenu;
+
+	}
+
+	public JCheckBoxMenuItem createShowOverlayMenuItem(Preferences preferences) {
+
+		JCheckBoxMenuItem showOverlayMenuItem = new JCheckBoxMenuItem("Show overlay");
+		showOverlayMenuItem.setSelected(isOverlayVisible());
+		showOverlayMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_9, OsUtils.CTRL_OR_CMD_MASK));
+		showOverlayMenuItem.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setOverlayVisible(showOverlayMenuItem.isSelected());
+				repaint();
+				if (preferences != null) {
+					ViewTools.SHOW_OVERLAY_PREF.put(preferences, showOverlayMenuItem.isSelected());
+				}
+			}
+		});
+
+		return showOverlayMenuItem;
 
 	}
 
