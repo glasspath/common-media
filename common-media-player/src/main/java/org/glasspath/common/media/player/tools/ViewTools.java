@@ -30,7 +30,6 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 
-import org.glasspath.common.media.player.FramePanel;
 import org.glasspath.common.media.player.IVideoPlayer;
 import org.glasspath.common.os.OsUtils;
 import org.glasspath.common.os.preferences.BoolPref;
@@ -39,6 +38,7 @@ import org.glasspath.common.swing.tools.AbstractTools;
 public class ViewTools extends AbstractTools<IVideoPlayer> {
 
 	public static final BoolPref ALWAYS_ON_TOP_PREF = new BoolPref("alwaysOnTop", false);
+	public static final BoolPref SHOW_OVERLAY_PREF = new BoolPref("showOverlay", true);
 
 	public ViewTools(IVideoPlayer context) {
 		super(context, "View");
@@ -71,19 +71,19 @@ public class ViewTools extends AbstractTools<IVideoPlayer> {
 			}
 		});
 
-		// TODO
-		JCheckBoxMenuItem overlayMenuItem = new JCheckBoxMenuItem("Show overlay");
-		menu.add(overlayMenuItem);
-		overlayMenuItem.setSelected(FramePanel.TODO_TEST_OVERLAY);
-		overlayMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_9, OsUtils.CTRL_OR_CMD_MASK));
-		overlayMenuItem.addActionListener(new ActionListener() {
+		JCheckBoxMenuItem showOverlayMenuItem = new JCheckBoxMenuItem("Show overlay");
+		menu.add(showOverlayMenuItem);
+		showOverlayMenuItem.setSelected(SHOW_OVERLAY_PREF.get(context.getPreferences()));
+		showOverlayMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_9, OsUtils.CTRL_OR_CMD_MASK));
+		showOverlayMenuItem.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				FramePanel.TODO_TEST_OVERLAY = overlayMenuItem.isSelected();
 				if (context.getVideoPlayerPanel() != null) {
+					context.getVideoPlayerPanel().setOverlayVisible(showOverlayMenuItem.isSelected());
 					context.getVideoPlayerPanel().getComponent().repaint();
 				}
+				SHOW_OVERLAY_PREF.put(context.getPreferences(), showOverlayMenuItem.isSelected());
 			}
 		});
 

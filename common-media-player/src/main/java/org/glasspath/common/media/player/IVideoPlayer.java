@@ -39,6 +39,8 @@ public interface IVideoPlayer extends FrameContext {
 
 	public Preferences getPreferences();
 
+	public void setOverlay(IOverlay overlay);
+
 	public void open(Video video);
 
 	public void close();

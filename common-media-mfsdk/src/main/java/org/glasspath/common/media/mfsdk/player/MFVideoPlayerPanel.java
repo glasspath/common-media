@@ -47,6 +47,7 @@ import org.glasspath.common.media.mfsdk.EvrCanvas.PlayerInstanceState;
 import org.glasspath.common.media.mfsdk.EvrCanvasPanel;
 import org.glasspath.common.media.mfsdk.FrameGenerator;
 import org.glasspath.common.media.mfsdk.MFUtils;
+import org.glasspath.common.media.player.IOverlay;
 import org.glasspath.common.media.player.IVideoPlayer;
 import org.glasspath.common.media.player.IVideoPlayerPanel;
 import org.glasspath.common.media.video.Video;
@@ -298,6 +299,26 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 	@Override
 	public boolean isRepeatEnabled() {
 		return repeatEnabled;
+	}
+
+	@Override
+	public IOverlay getOverlay() {
+		return null; // TODO
+	}
+
+	@Override
+	public void setOverlay(IOverlay overlay) {
+		// TODO
+	}
+
+	@Override
+	public boolean isOverlayVisible() {
+		return false; // TODO
+	}
+
+	@Override
+	public void setOverlayVisible(boolean visible) {
+		// TODO
 	}
 
 	@Override

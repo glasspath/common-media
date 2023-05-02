@@ -43,7 +43,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 	public static boolean TODO_DEBUG = false;
 	public static boolean TODO_TEST_QSV_DECODER = false;
-	public static int TODO_PRE_PROCESSOR_COUNT = 1;
+	public static int TODO_PRE_PROCESSOR_COUNT = 0;
 	public static int TODO_POST_PROCESSOR_COUNT = 0;
 
 	static {

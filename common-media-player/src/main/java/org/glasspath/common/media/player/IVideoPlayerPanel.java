@@ -38,9 +38,17 @@ public interface IVideoPlayerPanel {
 
 	public void close();
 
+	public boolean isRepeatEnabled();
+
 	public void setRepeatEnabled(boolean repeatEnabled);
 
-	public boolean isRepeatEnabled();
+	public IOverlay getOverlay();
+
+	public void setOverlay(IOverlay overlay);
+
+	public boolean isOverlayVisible();
+
+	public void setOverlayVisible(boolean visible);
 
 	public void play();
 

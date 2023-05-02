@@ -22,7 +22,6 @@
  */
 package org.glasspath.common.media.player;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics;
@@ -35,7 +34,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.prefs.Preferences;
 
@@ -51,17 +49,13 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import org.glasspath.common.icons.Icons;
 import org.glasspath.common.media.video.Frame;
 import org.glasspath.common.os.OsUtils;
-import org.glasspath.common.swing.SwingUtils;
 
 @SuppressWarnings("serial")
 public class FramePanel extends JPanel {
 
 	public static boolean TODO_DEBUG = false;
-
-	public static boolean TODO_TEST_OVERLAY = false;
 
 	public static final double MIN_SCALE = 0.1;
 	public static final double MAX_SCALE = 25.0;
@@ -69,6 +63,8 @@ public class FramePanel extends JPanel {
 	private final JFrame parentFrame;
 	private final Preferences preferences;
 	private Frame frame = null;
+	private IOverlay overlay = null;
+	private boolean overlayVisible = true;
 	private Double customScale = null;
 	private int translateX = 0;
 	private int translateY = 0;
@@ -177,6 +173,22 @@ public class FramePanel extends JPanel {
 
 	public void setFrame(Frame frame) {
 		this.frame = frame;
+	}
+
+	public IOverlay getOverlay() {
+		return overlay;
+	}
+
+	public void setOverlay(IOverlay overlay) {
+		this.overlay = overlay;
+	}
+
+	public boolean isOverlayVisible() {
+		return overlayVisible;
+	}
+
+	public void setOverlayVisible(boolean overlayVisible) {
+		this.overlayVisible = overlayVisible;
 	}
 
 	public Double getCustomScale() {
@@ -357,25 +369,6 @@ public class FramePanel extends JPanel {
 
 			g2d.drawImage(image, x, y, null);
 
-			if (TODO_TEST_OVERLAY) {
-
-				g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-				g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-				g2d.setColor(new Color(0, 0, 0, 75));
-				g2d.fill(new RoundRectangle2D.Double(x + 50, y + 50, 500, 500, 15, 15));
-				g2d.setColor(Color.white);
-				g2d.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, new float[] { 10.0F, 4.0F }, 0.0f));
-				g2d.draw(new RoundRectangle2D.Double(x + 50, y + 50, 500, 500, 15, 15));
-
-				g2d.setFont(g2d.getFont().deriveFont(35.0F));
-				g2d.setStroke(new BasicStroke(2.0f));
-				SwingUtils.drawString(this, g2d, "Video Player overlay test", x + 100, y + 125);
-
-				Icons.contentCopyXLarge.paintIcon(this, g2d, x + 100, y + 175);
-
-			}
-
 			// g2d.scale(1.0 / scale, 1.0 / scale);
 			// g2d.translate(-translateX, -translateY);
 			// g2d.translate(-(w / 2), -(h / 2));
@@ -386,11 +379,38 @@ public class FramePanel extends JPanel {
 			System.out.println("Frame image not yet ready..");
 		}
 
+		if (overlayVisible && overlay != null) {
+
+			if (image == null) {
+
+				if (customScale != null) {
+					scale = customScale;
+				} else {
+					initScale(overlay.getWidth(), overlay.getHeight());
+				}
+
+				g2d.translate(w / 2, h / 2);
+				g2d.translate(translateX, translateY);
+				g2d.scale(scale * (flipHorizontal ? -1.0 : 1.0), scale * (flipVertical ? -1.0 : 1.0));
+				if (rotate != null) {
+					g2d.rotate(Math.toRadians(rotate));
+				}
+
+				x = -(overlay.getWidth() / 2);
+				y = -(overlay.getHeight() / 2);
+
+			}
+
+			g2d.translate(x, y);
+			overlay.paint(g2d);
+
+		}
+
 		if (TODO_DEBUG && System.currentTimeMillis() > lastFpsMeasurement + 3000) {
 
 			if (lastFpsMeasurement != 0) {
-				final double time = System.currentTimeMillis() - lastFpsMeasurement;
-				final double fps = fpsRepaintCount / (time / 1000.0);
+				double time = System.currentTimeMillis() - lastFpsMeasurement;
+				double fps = fpsRepaintCount / (time / 1000.0);
 				System.out.println(fpsRepaintCount + " frames painted in " + time + " ms (" + fps + " fps)");
 			}
 

@@ -171,10 +171,15 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 	private void showFrame(Frame frame) {
 
+		timestamp = frame.getTimestamp().longValue();
+
+		IOverlay overlay = getOverlay();
+		if (overlay != null) {
+			overlay.setTimestamp(timestamp);
+		}
+
 		framePanel.setFrame(frame);
 		framePanel.repaint();
-
-		timestamp = frame.getTimestamp().longValue();
 
 		if (playing && loop != null && loop.fromTimestamp != null && loop.toTimestamp != null && timestamp >= loop.toTimestamp) {
 			setTimestamp(loop.fromTimestamp, playing);
@@ -238,6 +243,26 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 	@Override
 	public void setRepeatEnabled(boolean repeatEnabled) {
 		this.repeatEnabled = repeatEnabled;
+	}
+
+	@Override
+	public IOverlay getOverlay() {
+		return framePanel.getOverlay();
+	}
+
+	@Override
+	public void setOverlay(IOverlay overlay) {
+		framePanel.setOverlay(overlay);
+	}
+
+	@Override
+	public boolean isOverlayVisible() {
+		return framePanel.isOverlayVisible();
+	}
+
+	@Override
+	public void setOverlayVisible(boolean visible) {
+		framePanel.setOverlayVisible(visible);
 	}
 
 	@Override

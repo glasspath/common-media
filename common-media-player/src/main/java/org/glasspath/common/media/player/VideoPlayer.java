@@ -64,6 +64,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	private final ViewTools viewTools;
 	private final ControlsBar controlsBar;
 
+	private IOverlay overlay = null;
 	private IVideoPlayerPanel videoPlayerPanel = null;
 
 	private final List<IVideoPlayerListener> listeners = new ArrayList<>();
@@ -211,9 +212,16 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	protected abstract IVideoPlayerPanel createVideoPlayerPanel(IVideoPlayer videoPlayer, Video video);
 
 	private void initVideoPlayerPanel() {
+
 		if (videoPlayerPanel != null) {
+
 			videoPlayerPanel.setRepeatEnabled(PlaybackTools.REPEAT_ENABLED_PREF.get(preferences));
+
+			videoPlayerPanel.setOverlay(overlay);
+			videoPlayerPanel.setOverlayVisible(ViewTools.SHOW_OVERLAY_PREF.get(preferences));
+
 		}
+
 	}
 
 	@Override
@@ -239,6 +247,14 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	@Override
 	public Preferences getPreferences() {
 		return preferences;
+	}
+
+	@Override
+	public void setOverlay(IOverlay overlay) {
+		this.overlay = overlay;
+		if (videoPlayerPanel != null) {
+			videoPlayerPanel.setOverlay(overlay);
+		}
 	}
 
 	@Override
