@@ -164,15 +164,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 			// get here if something else goes wrong (decoding failed on another frame
 			// or pre-processing failed for example) is this the way we want to do this?
 
-			buffer[bufferIndex].reset();
-
-			bufferIndex++;
-			if (bufferIndex >= buffer.length) {
-				bufferIndex = 0;
-			}
-
-			decodeFailedCount++;
-			if (decodeFailedCount >= MAX_DECODE_FAILED_COUNT) {
+			if (buffer[bufferIndex].getState() == BufferedFrame.END_OF_VIDEO_REACHED) {
 
 				SwingUtilities.invokeLater(new Runnable() {
 
@@ -182,6 +174,28 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 					}
 				});
 
+			} else {
+
+				decodeFailedCount++;
+				if (decodeFailedCount >= MAX_DECODE_FAILED_COUNT) {
+
+					SwingUtilities.invokeLater(new Runnable() {
+
+						@Override
+						public void run() {
+							setPlaying(false);
+						}
+					});
+
+				}
+
+			}
+
+			buffer[bufferIndex].reset();
+
+			bufferIndex++;
+			if (bufferIndex >= buffer.length) {
+				bufferIndex = 0;
 			}
 
 			return null;
@@ -378,29 +392,6 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 		@Override
 		protected org.bytedeco.javacv.Frame decode(int thread) {
-
-			org.bytedeco.javacv.Frame frame = decodeFrame(thread);
-
-			if (frame == null) {
-
-				// TODO: Is there a better way to check if we are at the end of the video?
-				if (getDecoderTimestamp(thread, null) > duration - END_OF_VIDEO_REACHED_MARGIN) {
-					setDecoderTimestamp(thread, 0);
-				}
-
-				if (isRepeatEnabled()) {
-					frame = decodeFrame(thread);
-				} else {
-					// Returning null will result in DECODE_FAILED which will cause the player to stop
-				}
-
-			}
-
-			return frame;
-
-		}
-
-		private org.bytedeco.javacv.Frame decodeFrame(int thread) {
 			try {
 				org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
 				if (frame != null && frame.image != null) {
@@ -410,6 +401,17 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 				e.printStackTrace();
 			}
 			return null;
+		}
+
+		@Override
+		protected boolean isEndOfVideoReached(int thread) {
+			// TODO: Is there a better way to check if we are at the end of the video?
+			return getDecoderTimestamp(thread, null) > duration - END_OF_VIDEO_REACHED_MARGIN;
+		}
+
+		@Override
+		protected boolean isRepeatEnabled(int thread) {
+			return FFVideoPlayerPanel.this.isRepeatEnabled();
 		}
 
 		@Override

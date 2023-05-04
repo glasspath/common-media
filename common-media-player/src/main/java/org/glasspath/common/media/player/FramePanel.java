@@ -387,7 +387,7 @@ public class FramePanel extends JPanel {
 			}
 
 			g2d.translate(x, y);
-			overlay.paint(g2d);
+			overlay.paint(g2d, this);
 
 		}
 

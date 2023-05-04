@@ -24,6 +24,8 @@ package org.glasspath.common.media.player;
 
 import java.awt.Graphics;
 
+import javax.swing.JComponent;
+
 public interface IOverlay {
 
 	public int getWidth();
@@ -32,6 +34,6 @@ public interface IOverlay {
 
 	public void setTimestamp(long timestamp);
 
-	public void paint(Graphics g);
+	public void paint(Graphics g, JComponent component);
 
 }

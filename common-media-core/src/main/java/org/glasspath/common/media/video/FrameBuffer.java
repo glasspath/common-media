@@ -167,6 +167,10 @@ public abstract class FrameBuffer<F> {
 
 	protected abstract F decode(int thread);
 
+	protected abstract boolean isEndOfVideoReached(int thread);
+
+	protected abstract boolean isRepeatEnabled(int thread);
+
 	protected abstract void closeDecoder(int thread);
 
 	protected abstract boolean createPreProcessor(int thread);
@@ -217,6 +221,22 @@ public abstract class FrameBuffer<F> {
 
 							buffer[i].source = decode(workerIndex);
 
+							if (buffer[i].source == null) {
+
+								if (isEndOfVideoReached(workerIndex)) {
+
+									setDecoderTimestamp(workerIndex, 0);
+
+									if (isRepeatEnabled(workerIndex)) {
+										buffer[i].source = decode(workerIndex);
+									} else {
+										buffer[i].state = BufferedFrame.END_OF_VIDEO_REACHED;
+									}
+
+								}
+
+							}
+
 							if (buffer[i].source != null) {
 								buffer[i].setTimestamp(getDecoderTimestamp(workerIndex, buffer[i].source));
 								if (preProcessorThreads > 0) {
@@ -224,8 +244,7 @@ public abstract class FrameBuffer<F> {
 								} else {
 									buffer[i].state = BufferedFrame.PRE_PROCESSED;
 								}
-							} else {
-								// System.err.println("Decode failed, end of video reached?");
+							} else if (buffer[i].state != BufferedFrame.END_OF_VIDEO_REACHED) {
 								buffer[i].state = BufferedFrame.DECODE_FAILED;
 							}
 
@@ -429,8 +448,9 @@ public abstract class FrameBuffer<F> {
 
 	public static abstract class BufferedFrame<F> extends Frame {
 
-		public static final int DECODE_FAILED = -1;
-		public static final int PRE_PROCESS_FAILED = -2;
+		public static final int END_OF_VIDEO_REACHED = -1;
+		public static final int DECODE_FAILED = -2;
+		public static final int PRE_PROCESS_FAILED = -3;
 		public static final int CLEARED = 0;
 		public static final int DECODED = 1;
 		public static final int PRE_PROCESSED = 2;
