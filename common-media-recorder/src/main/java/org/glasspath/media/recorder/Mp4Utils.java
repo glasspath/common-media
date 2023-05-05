@@ -22,21 +22,21 @@
  */
 package org.glasspath.media.recorder;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.jcodec.common.io.NIOUtils;
 import org.jcodec.common.io.SeekableByteChannel;
 import org.jcodec.containers.mp4.MP4Util;
 import org.jcodec.containers.mp4.MP4Util.Atom;
 import org.jcodec.containers.mp4.boxes.Box;
-import org.jcodec.containers.mp4.boxes.DataBox;
 import org.jcodec.containers.mp4.boxes.Header;
-import org.jcodec.containers.mp4.boxes.MovieBox;
-import org.jcodec.containers.mp4.boxes.NameBox;
-import org.jcodec.containers.mp4.boxes.NodeBox;
-import org.jcodec.containers.mp4.boxes.UdtaBox;
 
 public class Mp4Utils {
 
@@ -106,51 +106,45 @@ public class Mp4Utils {
 				if (uuidBox != null) {
 
 					byte[] bytes = uuidBox.getData();
-					if (bytes != null && bytes.length >= 2) {
+					if (bytes != null && bytes.length > 0) {
 
-						System.out.println("uuid box found, UUID = " + uuidBox.getUUID() + ", length = " + bytes.length + ", first = " + bytes[0] + ", last = " + bytes[bytes.length - 1]);
+						System.out.println("uuid box found, UUID = " + uuidBox.getUUID() + ", length = " + bytes.length);
+
+						try {
+
+							System.out.println("Reading zip contents from uuid box");
+
+							ZipInputStream zipStream = new ZipInputStream(new ByteArrayInputStream(bytes));
+							ZipEntry entry = null;
+							while ((entry = zipStream.getNextEntry()) != null) {
+
+								if ("test.txt".equals(entry.getName())) {
+
+									BufferedReader reader = new BufferedReader(new InputStreamReader(zipStream));
+
+									String line;
+									while ((line = reader.readLine()) != null) {
+										System.out.println(line);
+									}
+
+									// reader.close();
+
+								}
+
+								zipStream.closeEntry();
+
+							}
+
+							zipStream.close();
+
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 
 					}
 
 				} else {
 					System.err.println("uuid box not found..");
-				}
-
-				MovieBox moovBox = MP4Util.parseMovieChannel(input);
-				if (moovBox != null) {
-
-					UdtaBox udtaBox = NodeBox.findFirst(moovBox, UdtaBox.class, "udta");
-					if (udtaBox != null) {
-
-						NameBox nameBox = NodeBox.findFirst(udtaBox, NameBox.class, "name");
-						if (nameBox != null) {
-
-							System.out.println("name box found, name = " + nameBox.getName());
-
-							DataBox dataBox = NodeBox.findFirst(udtaBox, DataBox.class, "data");
-							if (dataBox != null) {
-
-								byte[] bytes = dataBox.getData();
-								if (bytes != null && bytes.length >= 2) {
-
-									System.out.println("data box found, length = " + bytes.length + ", first = " + bytes[0] + ", last = " + bytes[bytes.length - 1]);
-
-								}
-
-							} else {
-								System.err.println("data box not found..");
-							}
-
-						} else {
-							System.err.println("name box not found..");
-						}
-
-					} else {
-						System.err.println("udta box not found..");
-					}
-
-				} else {
-					System.err.println("moov box not found..");
 				}
 
 			} catch (Exception e) {

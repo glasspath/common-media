@@ -22,27 +22,26 @@
  */
 package org.glasspath.media.recorder;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.jcodec.common.io.NIOUtils;
 import org.jcodec.common.io.SeekableByteChannel;
 import org.jcodec.containers.mp4.Brand;
 import org.jcodec.containers.mp4.MP4Util;
 import org.jcodec.containers.mp4.boxes.Box;
-import org.jcodec.containers.mp4.boxes.DataBox;
 import org.jcodec.containers.mp4.boxes.FileTypeBox;
 import org.jcodec.containers.mp4.boxes.MovieBox;
 import org.jcodec.containers.mp4.boxes.MovieHeaderBox;
-import org.jcodec.containers.mp4.boxes.NameBox;
-import org.jcodec.containers.mp4.boxes.UdtaBox;
 import org.jcodec.containers.mp4.muxer.MP4Muxer;
 
 public class Mp4Muxer extends MP4Muxer {
 
-	public static boolean TODO_TEST_UDTA_DATA_BOX = false;
 	public static boolean TODO_TEST_UUID_BOX = true;
 
 	private long created = System.currentTimeMillis();
@@ -78,22 +77,6 @@ public class Mp4Muxer extends MP4Muxer {
 					boxes.remove(0);
 					boxes.add(0, movieHeaderBox);
 
-					if (TODO_TEST_UDTA_DATA_BOX) {
-
-						UdtaBox udtaBox = UdtaBox.createUdtaBox();
-						boxes.add(udtaBox);
-
-						udtaBox.add(NameBox.createNameBox("This is a test"));
-
-						int dataLength = 1024 * 4;
-						byte[] dataBytes = new byte[dataLength];
-						dataBytes[0] = 123;
-						dataBytes[dataLength - 1] = 124;
-
-						udtaBox.add(DataBox.createDataBox(0, 0, dataBytes));
-
-					}
-
 				}
 
 			}
@@ -115,12 +98,21 @@ public class Mp4Muxer extends MP4Muxer {
 			// UUID uuid = UUID.randomUUID();
 			UUID uuid = UUID.fromString("40279e33-acf7-470a-be18-d2b4290e930b");
 
-			int dataLength = 1024 * 4;
-			byte[] dataBytes = new byte[dataLength];
-			dataBytes[0] = 123;
-			dataBytes[dataLength - 1] = 124;
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-			UUIDBox uuidBox = UUIDBox.createUUIDBox(uuid, dataBytes);
+			System.out.println("Creating zip contents as byte array");
+			ZipOutputStream zipOutputStream = new ZipOutputStream(baos);
+			ZipEntry zipEntry = new ZipEntry("test.txt");
+			zipOutputStream.putNextEntry(zipEntry);
+			for (int i = 1; i <= 1000; i++) {
+				zipOutputStream.write(("line " + i + "\n").getBytes());
+			}
+			zipOutputStream.closeEntry();
+			zipOutputStream.close();
+
+			System.out.println("Writing zip contents to uuid box");
+			UUIDBox uuidBox = UUIDBox.createUUIDBox(uuid, baos.toByteArray());
+			baos.close();
 
 			int sizeHint = uuidBox.estimateSize() + (4 << 10);
 
