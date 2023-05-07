@@ -136,6 +136,8 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder {
 	protected long getBytesWritten() {
 		return bytesWritten;
 	}
+	
+	protected abstract UUIDBox createUuidBox();
 
 	@Override
 	protected boolean closeFile() {
@@ -145,6 +147,7 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder {
 		if (muxer != null) {
 
 			try {
+				muxer.setUuidBox(createUuidBox());
 				muxer.finish();
 			} catch (IOException e) {
 				result = false;

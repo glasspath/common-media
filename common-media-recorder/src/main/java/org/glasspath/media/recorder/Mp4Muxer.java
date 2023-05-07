@@ -22,13 +22,9 @@
  */
 package org.glasspath.media.recorder;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import org.jcodec.common.io.NIOUtils;
 import org.jcodec.common.io.SeekableByteChannel;
@@ -42,9 +38,8 @@ import org.jcodec.containers.mp4.muxer.MP4Muxer;
 
 public class Mp4Muxer extends MP4Muxer {
 
-	public static boolean TODO_TEST_UUID_BOX = true;
-
 	private long created = System.currentTimeMillis();
+	private UUIDBox uuidBox = null;
 
 	public Mp4Muxer(SeekableByteChannel output, FileTypeBox fileTypeBox) throws IOException {
 		super(output, fileTypeBox);
@@ -93,26 +88,7 @@ public class Mp4Muxer extends MP4Muxer {
 		long mdatSize = out.position() - mdatOffset + 8;
 		MP4Util.writeMovie(out, movie);
 
-		if (TODO_TEST_UUID_BOX) {
-
-			// UUID uuid = UUID.randomUUID();
-			UUID uuid = UUID.fromString("40279e33-acf7-470a-be18-d2b4290e930b");
-
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-			System.out.println("Creating zip contents as byte array");
-			ZipOutputStream zipOutputStream = new ZipOutputStream(baos);
-			ZipEntry zipEntry = new ZipEntry("test.txt");
-			zipOutputStream.putNextEntry(zipEntry);
-			for (int i = 1; i <= 1000; i++) {
-				zipOutputStream.write(("line " + i + "\n").getBytes());
-			}
-			zipOutputStream.closeEntry();
-			zipOutputStream.close();
-
-			System.out.println("Writing zip contents to uuid box");
-			UUIDBox uuidBox = UUIDBox.createUUIDBox(uuid, baos.toByteArray());
-			baos.close();
+		if (uuidBox != null) {
 
 			int sizeHint = uuidBox.estimateSize() + (4 << 10);
 
@@ -134,6 +110,14 @@ public class Mp4Muxer extends MP4Muxer {
 
 	public void setCreated(long created) {
 		this.created = created;
+	}
+
+	public UUIDBox getUuidBox() {
+		return uuidBox;
+	}
+
+	public void setUuidBox(UUIDBox uuidBox) {
+		this.uuidBox = uuidBox;
 	}
 
 	public static Mp4Muxer createMp4Muxer(SeekableByteChannel output, Brand brand) throws IOException {
