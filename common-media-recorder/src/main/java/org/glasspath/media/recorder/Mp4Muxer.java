@@ -23,7 +23,6 @@
 package org.glasspath.media.recorder;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.jcodec.common.io.NIOUtils;
@@ -89,14 +88,7 @@ public class Mp4Muxer extends MP4Muxer {
 		MP4Util.writeMovie(out, movie);
 
 		if (uuidBox != null) {
-
-			int sizeHint = uuidBox.estimateSize() + (4 << 10);
-
-			ByteBuffer buf = ByteBuffer.allocate(sizeHint * 4);
-			uuidBox.write(buf);
-			buf.flip();
-			out.write(buf);
-
+			Mp4Utils.writeUUIDBox(out, uuidBox);
 		}
 
 		out.setPosition(mdatOffset);
@@ -112,11 +104,11 @@ public class Mp4Muxer extends MP4Muxer {
 		this.created = created;
 	}
 
-	public UUIDBox getUuidBox() {
+	public UUIDBox getUUIDBox() {
 		return uuidBox;
 	}
 
-	public void setUuidBox(UUIDBox uuidBox) {
+	public void setUUIDBox(UUIDBox uuidBox) {
 		this.uuidBox = uuidBox;
 	}
 

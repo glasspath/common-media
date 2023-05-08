@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -88,6 +89,17 @@ public class Mp4Utils {
 		}
 
 		return null;
+
+	}
+
+	public static void writeUUIDBox(SeekableByteChannel out, UUIDBox uuidBox) throws IOException {
+
+		int sizeHint = uuidBox.estimateSize() + (4 << 10);
+
+		ByteBuffer buf = ByteBuffer.allocate(sizeHint * 4);
+		uuidBox.write(buf);
+		buf.flip();
+		out.write(buf);
 
 	}
 
