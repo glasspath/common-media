@@ -42,7 +42,7 @@ import com.jhlabs.image.ContrastFilter;
 public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 	public static boolean TODO_DEBUG = false;
-	public static boolean TODO_TEST_QSV_DECODER = false;
+	public static boolean TODO_TEST_HW_DECODER = false;
 	public static int TODO_PRE_PROCESSOR_COUNT = 0;
 	public static int TODO_POST_PROCESSOR_COUNT = 0;
 
@@ -286,9 +286,9 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		protected boolean createDecoder(int thread) {
 
 			frameGrabber = new FFmpegFrameGrabber(video.getPath());
-			// frameGrabber.setVideoCodecName("h264_cuvid");
-			if (TODO_TEST_QSV_DECODER) {
+			if (TODO_TEST_HW_DECODER) {
 				frameGrabber.setVideoCodecName("h264_qsv");
+				// frameGrabber.setVideoCodecName("h264_cuvid");
 			}
 
 			// frameGrabber.setImageMode(ImageMode.RAW);
@@ -325,10 +325,6 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 				duration = frameGrabber.getLengthInTime();
 				frameRate = frameGrabber.getFrameRate();
-
-				if (TODO_TEST_QSV_DECODER) {
-					duration /= 10;
-				}
 
 				if (TODO_DEBUG) {
 					System.out.println("FFVideoPlayerPanel, video codec: " + frameGrabber.getVideoCodecName());
@@ -370,21 +366,13 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 		@Override
 		protected long getDecoderTimestamp(int thread, org.bytedeco.javacv.Frame source) {
-			if (TODO_TEST_QSV_DECODER) {
-				return frameGrabber.getTimestamp() / 1000;
-			} else {
-				return frameGrabber.getTimestamp();
-			}
+			return frameGrabber.getTimestamp();
 		}
 
 		@Override
 		protected void setDecoderTimestamp(int thread, long timestamp) {
 			try {
-				if (TODO_TEST_QSV_DECODER) {
-					frameGrabber.setVideoTimestamp(timestamp / 10000);
-				} else {
-					frameGrabber.setVideoTimestamp(timestamp);
-				}
+				frameGrabber.setVideoTimestamp(timestamp);
 			} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e) {
 				e.printStackTrace();
 			}
