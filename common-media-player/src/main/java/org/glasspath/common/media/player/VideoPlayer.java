@@ -57,8 +57,6 @@ import org.glasspath.media.recorder.Mp4Utils;
 
 public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
-	public static boolean TODO_TEST_GLASS_MODE = false;
-
 	private final boolean exitOnClose;
 	private final VideoPlayerSocketClient socketClient;
 	private final Preferences preferences;
@@ -141,14 +139,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 					});
 
 					IVideoPlayerPanel videoPlayerPanel = createVideoPlayerPanel(VideoPlayer.this, video);
-					if (TODO_TEST_GLASS_MODE) {
-
-						frame.setGlassPane(videoPlayerPanel.getComponent());
-						frame.getGlassPane().setVisible(true);
-
-					} else {
-						frame.getContentPane().add(videoPlayerPanel.getComponent(), BorderLayout.CENTER);
-					}
+					frame.getContentPane().add(videoPlayerPanel.getComponent(), BorderLayout.CENTER);
 					VideoPlayer.this.videoPlayerPanel = videoPlayerPanel;
 					initVideoPlayerPanel();
 
