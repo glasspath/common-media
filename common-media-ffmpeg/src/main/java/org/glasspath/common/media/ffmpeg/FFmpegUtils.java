@@ -22,6 +22,15 @@
  */
 package org.glasspath.common.media.ffmpeg;
 
+import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX;
+import static org.bytedeco.ffmpeg.global.avcodec.avcodec_get_hw_config;
+import static org.bytedeco.ffmpeg.global.avutil.av_free;
+import static org.bytedeco.ffmpeg.global.avutil.av_hwdevice_ctx_alloc;
+import static org.bytedeco.ffmpeg.global.avutil.av_hwdevice_ctx_create;
+
+import org.bytedeco.ffmpeg.avcodec.AVCodec;
+import org.bytedeco.ffmpeg.avcodec.AVCodecHWConfig;
+import org.bytedeco.ffmpeg.avutil.AVBufferRef;
 import org.bytedeco.javacpp.Loader;
 
 public class FFmpegUtils {
@@ -41,6 +50,44 @@ public class FFmpegUtils {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
+	}
+	
+	public static FFHWDeviceContextInfo createHWDeviceContextInfo(AVCodec avCodec, int hwDeviceType) {
+
+		FFHWDeviceContextInfo hwDeviceContextInfo = null;
+
+		for (int i = 0;; i++) {
+
+			AVCodecHWConfig hwConfig = avcodec_get_hw_config(avCodec, i);
+			if (hwConfig == null) {
+				break;
+			}
+
+			int deviceType = hwConfig.device_type();
+			// System.out.println("device_type = " + deviceType);
+
+			if ((hwConfig.methods() & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) < 0) {
+				continue;
+			} else if (deviceType != hwDeviceType) {
+				continue;
+			}
+
+			AVBufferRef hwDeviceContext = av_hwdevice_ctx_alloc(deviceType);
+			if (hwDeviceContext == null || av_hwdevice_ctx_create(hwDeviceContext, deviceType, (String) null, null, 0) < 0) {
+				System.err.println("HW accel not supported for type " + deviceType);
+				av_free(hwConfig);
+				av_free(hwDeviceContext);
+			} else {
+				System.out.println("HW accel created for type " + deviceType);
+				hwDeviceContextInfo = new FFHWDeviceContextInfo(hwConfig, hwDeviceContext);
+			}
+
+			break;
+
+		}
+
+		return hwDeviceContextInfo;
 
 	}
 
