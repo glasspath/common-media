@@ -38,9 +38,7 @@ public class FFFrameLoader extends FrameLoader {
 	public static boolean TODO_DEBUG = false;
 
 	static {
-		if (!TODO_DEBUG) {
-			org.bytedeco.ffmpeg.global.avutil.av_log_set_level(org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR);
-		}
+		FFmpegUtils.initLogLevel();
 	}
 
 	private final FFVideoFrameConverter frameConverter;

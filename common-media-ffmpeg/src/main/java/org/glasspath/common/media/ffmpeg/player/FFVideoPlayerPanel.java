@@ -30,6 +30,7 @@ import org.bytedeco.javacv.FFmpegFrameFilter;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FrameGrabber.Exception;
 import org.glasspath.common.media.ffmpeg.FFVideoFrameConverter;
+import org.glasspath.common.media.ffmpeg.FFmpegUtils;
 import org.glasspath.common.media.player.IVideoPlayer;
 import org.glasspath.common.media.player.VideoFramePlayerPanel;
 import org.glasspath.common.media.video.Frame;
@@ -47,9 +48,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	public static int TODO_POST_PROCESSOR_COUNT = 0;
 
 	static {
-		if (!TODO_DEBUG) {
-			org.bytedeco.ffmpeg.global.avutil.av_log_set_level(org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR);
-		}
+		FFmpegUtils.initLogLevel();
 	}
 
 	public static final int FRAME_BUFFER_SIZE = 10;

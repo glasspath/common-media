@@ -48,11 +48,7 @@ public class FFH264NalUnitDecoder {
 	public static boolean TODO_TEST_HW_DEVICE_CONTEXT = false;
 
 	static {
-		if (TODO_DEBUG) {
-			org.bytedeco.ffmpeg.global.avutil.av_log_set_level(org.bytedeco.ffmpeg.global.avutil.AV_LOG_DEBUG);
-		} else {
-			org.bytedeco.ffmpeg.global.avutil.av_log_set_level(org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR);
-		}
+		FFmpegUtils.initLogLevel();
 	}
 
 	static {
@@ -110,6 +106,7 @@ public class FFH264NalUnitDecoder {
 		// AVCodec avCodec = avcodec.avcodec_find_decoder_by_name("libopenh264");
 		// AVCodec avCodec = avcodec.avcodec_find_decoder_by_name("h264_cuvid");
 		// AVCodec avCodec = avcodec.avcodec_find_decoder_by_name("h264_qsv");
+
 		if (TODO_DEBUG) {
 			System.out.println("FFH264NalUnitDecoder, avCodec.name: " + avCodec.name().getString());
 		}
@@ -121,9 +118,18 @@ public class FFH264NalUnitDecoder {
 			hardwareContext = FFmpegUtils.createHWDeviceContextInfo(avCodec, avutil.AV_HWDEVICE_TYPE_CUDA);
 			// hardwareContext = FFmpegUtils.createHWDeviceContextInfo(avCodec, avutil.AV_HWDEVICE_TYPE_DXVA2);
 			// hardwareContext = FFmpegUtils.createHWDeviceContextInfo(avCodec, avutil.AV_HWDEVICE_TYPE_D3D11VA);
+			// hardwareContext = FFmpegUtils.createHWDeviceContextInfo(avCodec, avutil.AV_HWDEVICE_TYPE_VIDEOTOOLBOX);
+
 			if (hardwareContext != null) {
 				video_c.hw_device_ctx(hardwareContext.getHWDeviceContext());
-				System.out.println("FFH264NalUnitDecoder, hardware device context set");
+			}
+
+			if (TODO_DEBUG) {
+				if (hardwareContext != null) {
+					System.out.println("FFH264NalUnitDecoder, hardware device context successfully created");
+				} else {
+					System.err.println("FFH264NalUnitDecoder, hardware device context could not be created..");
+				}
 			}
 
 			video_c.flags(video_c.flags() | avcodec.AV_CODEC_FLAG_LOW_DELAY);
@@ -155,14 +161,14 @@ public class FFH264NalUnitDecoder {
 					int i = 0;
 					while (true) {
 
-						int supportedFormat = pixelFormats.get(i++);
-						if (supportedFormat == avutil.AV_PIX_FMT_NONE) {
+						int supportedPixelFormat = pixelFormats.get(i++);
+						if (supportedPixelFormat == avutil.AV_PIX_FMT_NONE) {
 							break;
-						} else if (supportedFormat == preferredPixelFormat) {
+						} else if (supportedPixelFormat == preferredPixelFormat) {
 							if (TODO_DEBUG) {
-								System.out.println("FFH264NalUnitDecoder, preferred pixel format found: " + supportedFormat);
+								System.out.println("FFH264NalUnitDecoder, preferred pixel format found: " + supportedPixelFormat);
 							}
-							return supportedFormat;
+							return supportedPixelFormat;
 						}
 
 					}
@@ -171,14 +177,14 @@ public class FFH264NalUnitDecoder {
 					i = 0;
 					while (true) {
 
-						int supportedFormat = pixelFormats.get(i++);
-						if (supportedFormat == avutil.AV_PIX_FMT_NONE) {
+						int supportedPixelFormat = pixelFormats.get(i++);
+						if (supportedPixelFormat == avutil.AV_PIX_FMT_NONE) {
 							break;
-						} else if (supportedFormat == avutil.AV_PIX_FMT_YUV420P) {
+						} else if (supportedPixelFormat == avutil.AV_PIX_FMT_YUV420P) {
 							if (TODO_DEBUG) {
-								System.out.println("FFH264NalUnitDecoder, first preferred pixel format not found, using: " + supportedFormat);
+								System.out.println("FFH264NalUnitDecoder, first preferred pixel format not found, using: " + supportedPixelFormat);
 							}
-							return supportedFormat;
+							return supportedPixelFormat;
 						}
 					}
 
@@ -186,20 +192,20 @@ public class FFH264NalUnitDecoder {
 					i = 0;
 					while (true) {
 
-						int supportedFormat = pixelFormats.get(i++);
-						if (supportedFormat == avutil.AV_PIX_FMT_NONE) {
+						int supportedPixelFormat = pixelFormats.get(i++);
+						if (supportedPixelFormat == avutil.AV_PIX_FMT_NONE) {
 							break;
-						} else if (supportedFormat == avutil.AV_PIX_FMT_NV12) {
+						} else if (supportedPixelFormat == avutil.AV_PIX_FMT_NV12) {
 							if (TODO_DEBUG) {
-								System.out.println("FFH264NalUnitDecoder, first and second preferred pixel format not found, using: " + supportedFormat);
+								System.out.println("FFH264NalUnitDecoder, first and second preferred pixel format not found, using: " + supportedPixelFormat);
 							}
-							return supportedFormat;
+							return supportedPixelFormat;
 						}
 
 					}
 
 					if (TODO_DEBUG) {
-						System.out.println("FFH264NalUnitDecoder, no preferred pixel formats found, using: " + avutil.AV_PIX_FMT_NONE);
+						System.err.println("FFH264NalUnitDecoder, no preferred pixel formats found, using: " + avutil.AV_PIX_FMT_NONE);
 					}
 
 					return avutil.AV_PIX_FMT_NONE;
@@ -219,9 +225,9 @@ public class FFH264NalUnitDecoder {
 
 		}
 
-		AVDictionary opts = new AVDictionary(null);
-		avcodec.avcodec_open2(video_c, avCodec, opts);
-		avutil.av_dict_free(opts);
+		AVDictionary options = new AVDictionary(null);
+		avcodec.avcodec_open2(video_c, avCodec, options);
+		avutil.av_dict_free(options);
 
 		frame = new Frame();
 
@@ -395,6 +401,7 @@ public class FFH264NalUnitDecoder {
 				avutil.av_frame_unref(hwAvFrame);
 
 			} else {
+
 				// TODO: Can we skip this when we don't have to return a frame?
 				result = avcodec.avcodec_receive_frame(video_c, picture);
 
