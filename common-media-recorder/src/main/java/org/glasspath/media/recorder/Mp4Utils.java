@@ -22,15 +22,10 @@
  */
 package org.glasspath.media.recorder;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import org.jcodec.common.io.NIOUtils;
 import org.jcodec.common.io.SeekableByteChannel;
@@ -100,78 +95,6 @@ public class Mp4Utils {
 		uuidBox.write(buf);
 		buf.flip();
 		out.write(buf);
-
-	}
-
-	// TODO
-	public static void todoInspectVideoFile(String path) {
-
-		if (path.endsWith(".mp4")) {
-
-			SeekableByteChannel input = null;
-
-			try {
-
-				input = NIOUtils.readableChannel(new File(path));
-
-				UUIDBox uuidBox = Mp4Utils.parseUUIDBox(input, UUID.fromString("40279e33-acf7-470a-be18-d2b4290e930b"));
-				if (uuidBox != null) {
-
-					byte[] bytes = uuidBox.getData();
-					if (bytes != null && bytes.length > 0) {
-
-						System.out.println("uuid box found, UUID = " + uuidBox.getUUID() + ", length = " + bytes.length);
-
-						try {
-
-							System.out.println("Reading zip contents from uuid box");
-
-							ZipInputStream zipStream = new ZipInputStream(new ByteArrayInputStream(bytes));
-							ZipEntry entry = null;
-							while ((entry = zipStream.getNextEntry()) != null) {
-
-								if ("test.txt".equals(entry.getName())) {
-
-									BufferedReader reader = new BufferedReader(new InputStreamReader(zipStream));
-
-									String line;
-									while ((line = reader.readLine()) != null) {
-										System.out.println(line);
-									}
-
-									// reader.close();
-
-								}
-
-								zipStream.closeEntry();
-
-							}
-
-							zipStream.close();
-
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-
-					}
-
-				} else {
-					System.err.println("uuid box not found..");
-				}
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			} finally {
-				if (input != null) {
-					try {
-						input.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-
-		}
 
 	}
 

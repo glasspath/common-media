@@ -53,7 +53,6 @@ import org.glasspath.common.media.video.Video;
 import org.glasspath.common.swing.file.chooser.FileChooser;
 import org.glasspath.common.swing.frame.FrameUtils;
 import org.glasspath.common.swing.theme.Theme;
-import org.glasspath.media.recorder.Mp4Utils;
 
 public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
@@ -92,11 +91,6 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 			socketClient = new VideoPlayerSocketClient(this, port);
 		} else {
 			socketClient = null;
-		}
-
-		// TODO
-		if (video != null) {
-			Mp4Utils.todoInspectVideoFile(video.getPath());
 		}
 
 		preferences = Preferences.userNodeForPackage(this.getClass());
