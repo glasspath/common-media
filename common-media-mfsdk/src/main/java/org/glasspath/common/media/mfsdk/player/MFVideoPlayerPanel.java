@@ -210,7 +210,7 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 
 								pause();
 								boolean pausedOk = true;
-								final long pauseStart = System.currentTimeMillis();
+								long pauseStart = System.currentTimeMillis();
 								while (evrCanvas.getPlayerState(playerInstance) != EvrCanvas.PlayerState.PLAYER_STATE_PAUSED.getValue()) {
 									try {
 										Thread.sleep(2);
@@ -530,16 +530,16 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 				@Override
 				public void run() {
 
-					final int callbackId = 1;
+					int callbackId = 1;
 
-					final FrameGenerator frameGenerator = new FrameGenerator() {
+					FrameGenerator frameGenerator = new FrameGenerator() {
 
 						@Override
 						public void frameGenerated(long instance, int requestId, long requestedTimestamp, long actualTimestamp, int width, int height, byte[] bitmapData) {
 
 							if (callbackId == requestId) {
 
-								final BufferedImage image = FrameGenerator.createBufferedImage(bitmapData, width, height);
+								BufferedImage image = FrameGenerator.createBufferedImage(bitmapData, width, height);
 								if (image != null) {
 
 									/*
@@ -599,7 +599,7 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 						long interval = 100 * 10000; // TODO: Make fps configurable (currently 10fps)
 						totalImageCount = (int) ((loop.toTimestamp - loop.fromTimestamp) / interval) + 1; // TODO: Why + 1?
 
-						final long generatorInstance = frameGenerator.createInstance();
+						long generatorInstance = frameGenerator.createInstance();
 						if (generatorInstance >= 0) {
 
 							if (frameGenerator.openFile(generatorInstance, video.getPath(), MFUtils.MFSDK_SOURCE_TYPE_DEFAULT) >= 0) {

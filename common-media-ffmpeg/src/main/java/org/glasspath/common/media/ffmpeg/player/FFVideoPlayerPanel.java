@@ -23,19 +23,28 @@
 package org.glasspath.common.media.ffmpeg.player;
 
 import java.awt.image.BufferedImage;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
+import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageOutputStream;
 import javax.swing.SwingUtilities;
 
 import org.bytedeco.javacv.FFmpegFrameFilter;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FrameGrabber.Exception;
+import org.glasspath.common.media.ffmpeg.FFFrameLoader;
 import org.glasspath.common.media.ffmpeg.FFVideoFrameConverter;
 import org.glasspath.common.media.ffmpeg.FFmpegUtils;
+import org.glasspath.common.media.image.GifExporter;
 import org.glasspath.common.media.player.IVideoPlayer;
 import org.glasspath.common.media.player.VideoFramePlayerPanel;
+import org.glasspath.common.media.video.DefaultVideo;
 import org.glasspath.common.media.video.Frame;
 import org.glasspath.common.media.video.FrameBuffer;
 import org.glasspath.common.media.video.FrameBuffer.BufferedFrame;
+import org.glasspath.common.media.video.FrameLoaderCallback;
+import org.glasspath.common.media.video.Resolution;
 import org.glasspath.common.media.video.Video;
 
 import com.jhlabs.image.ContrastFilter;
@@ -220,6 +229,100 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	@Override
 	public long getDuration() {
 		return duration;
+	}
+
+	@Override
+	public void exportLoopToGif(GifExportRequest request) {
+
+		Loop loop = getLoop();
+		if (video != null && loop != null && loop.fromTimestamp != null && loop.toTimestamp != null && loop.toTimestamp > loop.fromTimestamp) {
+			
+			long from = loop.fromTimestamp / 1000; // TODO
+			long to = loop.toTimestamp / 1000; // TODO
+			int interval = 100; // TODO: Make fps configurable (currently 10fps)
+			int count = (int) ((to - from) / interval);
+			int width = (int) (Resolution.HD_720P.getWidth() * 0.5); // TODO
+			int height = (int) (Resolution.HD_720P.getHeight() * 0.5); // TODO
+
+			new Thread(new Runnable() {
+
+				private ImageOutputStream output = null;
+				private GifExporter gifExporter = null;
+				private boolean writerInited = false;
+
+				@Override
+				public void run() {
+
+					FFFrameLoader frameLoader = new FFFrameLoader();
+					frameLoader.installOnVideo(new DefaultVideo(video.getName(), video.getPath()));
+
+					FrameLoaderCallback callback = new FrameLoaderCallback(0) {
+
+						@Override
+						public void frameLoaded(DefaultVideo video, Frame frame, int callbackId) {
+
+							BufferedImage image = frame.getImage();
+							if (image != null) {
+
+								if (!writerInited) {
+
+									try {
+										output = new FileImageOutputStream(request.getFile());
+										gifExporter = new GifExporter(output, image.getType(), interval, true);
+									} catch (FileNotFoundException e) {
+										e.printStackTrace();
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
+
+									writerInited = true;
+
+								}
+
+								if (gifExporter != null) {
+
+									try {
+										gifExporter.writeImage(image);
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
+
+								}
+
+							}
+
+						}
+					};
+
+					frameLoader.loadFramesAtInterval(callback, from, interval, count, width, height);
+
+					if (gifExporter != null) {
+
+						try {
+							gifExporter.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+
+					}
+
+					if (output != null) {
+
+						try {
+							output.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+
+					}
+
+					frameLoader.close();
+
+				}
+			}).start();
+
+		}
+
 	}
 
 	@Override

@@ -46,7 +46,11 @@ public class FFFrameLoader extends FrameLoader {
 	private boolean fileOpen = false;
 
 	public FFFrameLoader() {
-		frameConverter = new FFVideoFrameConverter(false); // TODO? (we are setting width/height on frame grabber, this causes optimized converter to fail..)
+		this(false); // TODO? (we are setting width/height on frame grabber, this causes optimized converter to fail..)
+	}
+
+	public FFFrameLoader(boolean optimizedConverter) {
+		frameConverter = new FFVideoFrameConverter(optimizedConverter);
 	}
 
 	@Override
@@ -55,6 +59,7 @@ public class FFFrameLoader extends FrameLoader {
 
 		frameGrabber = new FFmpegFrameGrabber(video.getPath());
 
+		// TODO
 		int cores = Runtime.getRuntime().availableProcessors(); // Includes hyper threading cores
 		int threads = cores + 1;
 		frameGrabber.setVideoOption("threads", "" + threads);
@@ -63,7 +68,7 @@ public class FFFrameLoader extends FrameLoader {
 
 			frameGrabber.start();
 
-			video.setDuration(frameGrabber.getLengthInTime() / 1000L);
+			video.setDuration(frameGrabber.getLengthInTime() / 1000L); // TODO
 			video.setFrameRate(frameGrabber.getFrameRate());
 
 			Map<String, String> metadata;
@@ -327,6 +332,51 @@ public class FFFrameLoader extends FrameLoader {
 			} catch (Exception e) {
 				fileOpen = false;
 				e.printStackTrace();
+			}
+
+		}
+
+	}
+
+	public synchronized void loadFramesAtInterval(FrameLoaderCallback callback, long from, long interval, int count, int width, int height) {
+
+		if (fileOpen && count > 0) {
+
+			long videoCorrectionOffset = video.getStartTimeCorrectionOffset();
+			long fromTimestamp = from - (video.getTimestamp() + videoCorrectionOffset);
+
+			if (fromTimestamp < 0) {
+				fromTimestamp = 0;
+			}
+
+			if (fromTimestamp < video.getDuration()) {
+
+				frameGrabber.setImageWidth(width);
+				frameGrabber.setImageHeight(height);
+
+				long timestamp = fromTimestamp;
+				long toTimestamp = from + (interval * count);
+				while (!callback.isCanceled() && timestamp < video.getDuration() && timestamp < toTimestamp) {
+
+					if (TODO_DEBUG) {
+						System.out.println("Grabbing frame for video: " + video.getName() + " at: " + timestamp);
+					}
+
+					org.bytedeco.javacv.Frame frame = grabFrame(frameGrabber, timestamp);
+
+					if (frame != null && frame.image != null) {
+						BufferedImage image = frameConverter.createBufferedImage(frame);
+						// callback.fireFrameLoaded(video, new Frame(video.getTimestamp() + timestamp, image));
+						if (TODO_DEBUG) {
+							System.out.println("Frame loaded for video: " + video.getName() + " pts: " + frame.timestamp);
+						}
+						callback.fireFrameLoaded(video, new Frame(timestamp, image));
+					}
+
+					timestamp += interval;
+
+				}
+
 			}
 
 		}

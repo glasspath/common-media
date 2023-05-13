@@ -42,8 +42,8 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 	protected final IVideoPlayer context;
 	protected final FramePanel framePanel;
+	protected Video video = null;
 	private final Thread playbackThread;
-	private Video video = null;
 	private boolean playing = IVideoPlayer.DEFAULT_PLAYBACK_STATE_PLAYING;
 	private boolean repeatEnabled = true;
 	private long timestamp = 0 * 1000L;
@@ -379,11 +379,6 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 	@Override
 	public void setLoop(Loop loop) {
 		this.loop = loop;
-	}
-
-	@Override
-	public void exportLoopToGif(GifExportRequest request) {
-		// TODO
 	}
 
 	@Override
