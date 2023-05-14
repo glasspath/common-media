@@ -423,11 +423,17 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 			// TODO: Icon
 			String selectedFile = FileChooser.browseForFile("gif", Icons.motionPlayBlue, true, frame, preferences, "gifExportLocation", "export.gif");
 			if (selectedFile != null && selectedFile.length() > 0) {
-
+				
 				GifExportRequest request = new GifExportRequest(new File(selectedFile)) {
 
-					public void progressUpdate(int progress, int total) {
+					@Override
+					public void update(int progress, int total) {
 
+					}
+					
+					@Override
+					public void finish() {
+						
 					}
 				};
 

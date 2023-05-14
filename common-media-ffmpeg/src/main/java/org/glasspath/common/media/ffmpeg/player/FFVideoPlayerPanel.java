@@ -236,11 +236,11 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 		Loop loop = getLoop();
 		if (video != null && loop != null && loop.fromTimestamp != null && loop.toTimestamp != null && loop.toTimestamp > loop.fromTimestamp) {
-			
+
 			long from = loop.fromTimestamp / 1000; // TODO
 			long to = loop.toTimestamp / 1000; // TODO
 			int interval = 100; // TODO: Make fps configurable (currently 10fps)
-			int count = (int) ((to - from) / interval);
+			int totalFrameCount = (int) ((to - from) / interval);
 			int width = (int) (Resolution.HD_720P.getWidth() * 0.5); // TODO
 			int height = (int) (Resolution.HD_720P.getHeight() * 0.5); // TODO
 
@@ -257,6 +257,8 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 					frameLoader.installOnVideo(new DefaultVideo(video.getName(), video.getPath()));
 
 					FrameLoaderCallback callback = new FrameLoaderCallback(0) {
+
+						private int frameCount = 0;
 
 						@Override
 						public void frameLoaded(DefaultVideo video, Frame frame, int callbackId) {
@@ -283,6 +285,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 									try {
 										gifExporter.writeImage(image);
+										request.update(++frameCount, totalFrameCount);
 									} catch (IOException e) {
 										e.printStackTrace();
 									}
@@ -294,7 +297,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 						}
 					};
 
-					frameLoader.loadFramesAtInterval(callback, from, interval, count, width, height);
+					frameLoader.loadFramesAtInterval(callback, from, interval, totalFrameCount, width, height);
 
 					if (gifExporter != null) {
 
@@ -318,9 +321,13 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 					frameLoader.close();
 
+					request.finish();
+
 				}
 			}).start();
 
+		} else {
+			request.finish();
 		}
 
 	}

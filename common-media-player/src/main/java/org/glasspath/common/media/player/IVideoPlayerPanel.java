@@ -91,10 +91,9 @@ public interface IVideoPlayerPanel {
 
 	}
 
-	public static class GifExportRequest {
+	public static abstract class GifExportRequest {
 
 		private final File file;
-		private boolean cancelled = false;
 
 		public GifExportRequest(File file) {
 			this.file = file;
@@ -104,13 +103,9 @@ public interface IVideoPlayerPanel {
 			return file;
 		}
 
-		public boolean isCancelled() {
-			return cancelled;
-		}
-
-		public void progressUpdate(int progress, int total) {
-
-		}
+		public abstract void update(int progress, int total);
+		
+		public abstract void finish();
 
 	}
 

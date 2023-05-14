@@ -583,7 +583,7 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 									}
 
 									imageCount++;
-									request.progressUpdate(imageCount, totalImageCount);
+									request.update(imageCount, totalImageCount);
 
 								}
 
