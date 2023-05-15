@@ -48,6 +48,7 @@ import org.glasspath.common.media.mfsdk.EvrCanvas.PlayerInstanceState;
 import org.glasspath.common.media.mfsdk.EvrCanvasPanel;
 import org.glasspath.common.media.mfsdk.FrameGenerator;
 import org.glasspath.common.media.mfsdk.MFUtils;
+import org.glasspath.common.media.player.ExportRequest;
 import org.glasspath.common.media.player.IOverlay;
 import org.glasspath.common.media.player.IVideoPlayer;
 import org.glasspath.common.media.player.IVideoPlayerPanel;
@@ -515,7 +516,7 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 	}
 
 	@Override
-	public void exportLoopToGif(GifExportRequest request) {
+	public void exportLoop(ExportRequest request) {
 
 		if (loop != null && loop.fromTimestamp != null && loop.toTimestamp != null) {
 

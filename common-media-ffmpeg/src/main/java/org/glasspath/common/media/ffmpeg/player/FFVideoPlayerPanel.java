@@ -37,6 +37,7 @@ import org.glasspath.common.media.ffmpeg.FFFrameLoader;
 import org.glasspath.common.media.ffmpeg.FFVideoFrameConverter;
 import org.glasspath.common.media.ffmpeg.FFmpegUtils;
 import org.glasspath.common.media.image.GifExporter;
+import org.glasspath.common.media.player.ExportRequest;
 import org.glasspath.common.media.player.IVideoPlayer;
 import org.glasspath.common.media.player.VideoFramePlayerPanel;
 import org.glasspath.common.media.video.DefaultVideo;
@@ -231,7 +232,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	}
 
 	@Override
-	public void exportLoopToGif(GifExportRequest request) {
+	public void exportLoop(ExportRequest request) {
 
 		Loop loop = getLoop();
 		if (video != null && loop != null && loop.fromTimestamp != null && loop.toTimestamp != null && loop.toTimestamp > loop.fromTimestamp) {

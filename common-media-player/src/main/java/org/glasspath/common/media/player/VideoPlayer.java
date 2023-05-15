@@ -42,7 +42,6 @@ import javax.swing.JMenuBar;
 import javax.swing.SwingUtilities;
 
 import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
-import org.glasspath.common.media.player.IVideoPlayerPanel.GifExportRequest;
 import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
 import org.glasspath.common.media.player.icons.Icons;
 import org.glasspath.common.media.player.net.VideoPlayerSocketClient;
@@ -444,7 +443,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
 							started = true;
 
-							GifExportRequest request = new GifExportRequest(new File(selectedFile)) {
+							ExportRequest request = new ExportRequest(new File(selectedFile)) {
 
 								@Override
 								public void update(int progress, int total) {
@@ -459,7 +458,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
 							progressDialog.updateProgress("Exporting gif to " + selectedFile);
 
-							videoPlayerPanel.exportLoopToGif(request);
+							videoPlayerPanel.exportLoop(request);
 
 						}
 
