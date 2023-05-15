@@ -44,7 +44,6 @@ import org.glasspath.common.media.video.Frame;
 import org.glasspath.common.media.video.FrameBuffer;
 import org.glasspath.common.media.video.FrameBuffer.BufferedFrame;
 import org.glasspath.common.media.video.FrameLoaderCallback;
-import org.glasspath.common.media.video.Resolution;
 import org.glasspath.common.media.video.Video;
 
 import com.jhlabs.image.ContrastFilter;
@@ -239,10 +238,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 			long from = loop.fromTimestamp / 1000; // TODO
 			long to = loop.toTimestamp / 1000; // TODO
-			int interval = 100; // TODO: Make fps configurable (currently 10fps)
-			int totalFrameCount = (int) ((to - from) / interval);
-			int width = (int) (Resolution.HD_720P.getWidth() * 0.5); // TODO
-			int height = (int) (Resolution.HD_720P.getHeight() * 0.5); // TODO
+			int totalFrameCount = (int) ((to - from) / request.getInterval());
 
 			new Thread(new Runnable() {
 
@@ -270,7 +266,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 									try {
 										output = new FileImageOutputStream(request.getFile());
-										gifExporter = new GifExporter(output, image.getType(), interval, true);
+										gifExporter = new GifExporter(output, image.getType(), request.getInterval(), true);
 									} catch (FileNotFoundException e) {
 										e.printStackTrace();
 									} catch (IOException e) {
@@ -297,7 +293,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 						}
 					};
 
-					frameLoader.loadFramesAtInterval(callback, from, interval, totalFrameCount, width, height);
+					frameLoader.loadFramesAtInterval(callback, from, request.getInterval(), totalFrameCount, request.getWidth(), request.getHeight());
 
 					if (gifExporter != null) {
 

@@ -28,6 +28,7 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 
+import org.glasspath.common.media.video.Resolution;
 import org.glasspath.common.media.video.Video;
 
 public interface IVideoPlayerPanel {
@@ -93,7 +94,14 @@ public interface IVideoPlayerPanel {
 
 	public static abstract class GifExportRequest {
 
+		public static final int DEFAULT_WIDTH = (int) (Resolution.HD_720P.getWidth() * 0.5);
+		public static final int DEFAULT_HEIGHT = (int) (Resolution.HD_720P.getHeight() * 0.5);
+		public static final int DEFAULT_INTERVAL = 100;
+
 		private final File file;
+		private int width = DEFAULT_WIDTH;
+		private int height = DEFAULT_HEIGHT;
+		private int interval = DEFAULT_INTERVAL;
 
 		public GifExportRequest(File file) {
 			this.file = file;
@@ -103,8 +111,32 @@ public interface IVideoPlayerPanel {
 			return file;
 		}
 
+		public int getWidth() {
+			return width;
+		}
+
+		public void setWidth(int width) {
+			this.width = width;
+		}
+
+		public int getHeight() {
+			return height;
+		}
+
+		public void setHeight(int height) {
+			this.height = height;
+		}
+
+		public int getInterval() {
+			return interval;
+		}
+
+		public void setInterval(int interval) {
+			this.interval = interval;
+		}
+
 		public abstract void update(int progress, int total);
-		
+
 		public abstract void finish();
 
 	}

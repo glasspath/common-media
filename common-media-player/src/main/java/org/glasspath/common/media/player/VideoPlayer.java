@@ -24,6 +24,7 @@ package org.glasspath.common.media.player;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
@@ -50,6 +51,7 @@ import org.glasspath.common.media.player.tools.FileTools;
 import org.glasspath.common.media.player.tools.PlaybackTools;
 import org.glasspath.common.media.player.tools.ViewTools;
 import org.glasspath.common.media.video.Video;
+import org.glasspath.common.swing.dialog.ProgressDialog;
 import org.glasspath.common.swing.file.chooser.FileChooser;
 import org.glasspath.common.swing.frame.FrameUtils;
 import org.glasspath.common.swing.theme.Theme;
@@ -420,24 +422,53 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
 		if (videoPlayerPanel != null && videoPlayerPanel.getLoop() != null && videoPlayerPanel.getLoop().fromTimestamp != null && videoPlayerPanel.getLoop().toTimestamp != null) {
 
+			// TODO: Show dialog for configuring gif width, height, interval etc.
+
 			// TODO: Icon
 			String selectedFile = FileChooser.browseForFile("gif", Icons.motionPlayBlue, true, frame, preferences, "gifExportLocation", "export.gif");
 			if (selectedFile != null && selectedFile.length() > 0) {
-				
-				GifExportRequest request = new GifExportRequest(new File(selectedFile)) {
+
+				ProgressDialog progressDialog = new ProgressDialog(this, "Progress", Icons.motionPlayBlue, true, false);
+				progressDialog.getHeaderLabel().setIcon(Icons.motionPlayBlue32x32);
+				progressDialog.setPreferredSize(new Dimension(580, 350));
+				progressDialog.getHeaderLabel().setText("Exporting gif");
+				progressDialog.getCancelButton().setEnabled(false);
+				progressDialog.addWindowListener(new WindowAdapter() {
+
+					boolean started = false;
 
 					@Override
-					public void update(int progress, int total) {
+					public void windowActivated(WindowEvent e) {
+
+						if (!started) {
+
+							started = true;
+
+							GifExportRequest request = new GifExportRequest(new File(selectedFile)) {
+
+								@Override
+								public void update(int progress, int total) {
+									progressDialog.updateProgress(null, "Exporting frame ", " of ", "", progress, total, false);
+								}
+
+								@Override
+								public void finish() {
+									progressDialog.close();
+								}
+							};
+
+							progressDialog.updateProgress("Exporting gif to " + selectedFile);
+
+							videoPlayerPanel.exportLoopToGif(request);
+
+						}
 
 					}
-					
-					@Override
-					public void finish() {
-						
-					}
-				};
+				});
 
-				videoPlayerPanel.exportLoopToGif(request);
+				progressDialog.pack();
+				progressDialog.setLocationRelativeTo(frame);
+				progressDialog.setVisible(true);
 
 			}
 
