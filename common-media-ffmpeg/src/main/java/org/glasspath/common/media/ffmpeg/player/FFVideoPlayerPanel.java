@@ -71,7 +71,6 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	private int interval = 0;
 	private int bufferIndex = 0;
 	private int decodeFailedCount = 0;
-	private boolean exit = false;
 
 	public FFVideoPlayerPanel(IVideoPlayer context, Video video) {
 		super(context);
@@ -332,17 +331,17 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	@Override
 	public void exit() {
 
-		exit = true;
-
 		if (frameBuffer != null) {
 			frameBuffer.exit();
 		}
+
+		super.exit();
 
 	}
 
 	@Override
 	public boolean isExited() {
-		return super.isExited() && exit && (frameBuffer == null || frameBuffer.isExited()); // TODO?
+		return super.isExited() && (frameBuffer == null || frameBuffer.isExited()); // TODO?
 	}
 
 	private class FFFrameBuffer extends FrameBuffer<org.bytedeco.javacv.Frame> {

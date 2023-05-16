@@ -42,6 +42,7 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 	protected final IVideoPlayer context;
 	protected final FramePanel framePanel;
+	private final KeyEventDispatcher keyEventDispatcher;
 	protected Video video = null;
 	private final Thread playbackThread;
 	private boolean playing = IVideoPlayer.DEFAULT_PLAYBACK_STATE_PLAYING;
@@ -49,7 +50,7 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 	private long timestamp = 0 * 1000L;
 	private boolean showSingleFrame = false;
 	private Loop loop = null;
-	private boolean exit = false;
+	protected boolean exit = false;
 
 	public VideoFramePlayerPanel(IVideoPlayer context) {
 
@@ -57,8 +58,9 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 		framePanel = new FramePanel();
 
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
+		keyEventDispatcher = new KeyEventDispatcher() {
 
+			@Override
 			public boolean dispatchKeyEvent(KeyEvent e) {
 
 				if (context.getFrame().isActive() && e.getID() == KeyEvent.KEY_PRESSED) {
@@ -99,7 +101,9 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 				return false;
 
 			}
-		});
+		};
+
+		installKeyEventDispatcher();
 
 		playbackThread = new Thread(new Runnable() {
 
@@ -388,12 +392,22 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 	@Override
 	public void exit() {
+		uninstallKeyEventDispatcher();
 		exit = true;
 	}
 
 	@Override
 	public boolean isExited() {
-		return true;
+		return exit;
+	}
+
+	private void installKeyEventDispatcher() {
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(keyEventDispatcher);
+
+	}
+
+	private void uninstallKeyEventDispatcher() {
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(keyEventDispatcher);
 	}
 
 }
