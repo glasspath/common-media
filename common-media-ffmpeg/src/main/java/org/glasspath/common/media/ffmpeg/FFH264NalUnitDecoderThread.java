@@ -47,7 +47,7 @@ public abstract class FFH264NalUnitDecoderThread {
 	private final Thread nalUnitDecoderThread;
 	private FFH264NalUnitDecoder decoder = null;
 	private FFVideoFrameConverter converter = null;
-	private H264ParameterSets parameterSets = null;
+	private volatile H264ParameterSets parameterSets = null;
 	private int skipFrames = 0;
 	private List<H264NalUnit> nalUnitQueue = new ArrayList<>(INITIAL_NAL_UNIT_QUEUE_SIZE);
 	private List<H264NalUnit> nalUnitQueueCopy = null;
@@ -58,7 +58,7 @@ public abstract class FFH264NalUnitDecoderThread {
 	private int noFrameCount = 0;
 	private int fpsFrameCount = 0;
 	private long lastFpsMeasurement = 0;
-	private boolean exit = false;
+	private volatile boolean exit = false;
 
 	public FFH264NalUnitDecoderThread(Resolution resolution) {
 

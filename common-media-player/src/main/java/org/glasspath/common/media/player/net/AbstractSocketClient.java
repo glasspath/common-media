@@ -42,7 +42,7 @@ public abstract class AbstractSocketClient {
 
 	private String welcomeMessage = null;
 
-	private boolean exit = false;
+	private volatile boolean exit = false;
 
 	public AbstractSocketClient(String ip, int port) {
 

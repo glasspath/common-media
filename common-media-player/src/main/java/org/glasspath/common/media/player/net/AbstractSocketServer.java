@@ -47,7 +47,7 @@ public abstract class AbstractSocketServer {
 
 	private String welcomeMessage = null;
 
-	private boolean exit = false;
+	private volatile boolean exit = false;
 
 	public AbstractSocketServer(int portFrom, int portTo) {
 

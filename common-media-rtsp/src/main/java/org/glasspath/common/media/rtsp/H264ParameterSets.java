@@ -29,9 +29,9 @@ import org.glasspath.common.media.h264.H264NalUnit.NalUnitType;
 
 public class H264ParameterSets {
 
-	public H264NalUnit sequenceParameterSet = null;
-	public H264NalUnit pictureParameterSet = null;
-	public boolean spropParmeterSets = false;
+	public volatile H264NalUnit sequenceParameterSet = null;
+	public volatile H264NalUnit pictureParameterSet = null;
+	public volatile boolean spropParmeterSets = false;
 
 	public H264ParameterSets() {
 

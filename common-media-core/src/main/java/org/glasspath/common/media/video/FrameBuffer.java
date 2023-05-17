@@ -34,7 +34,7 @@ public abstract class FrameBuffer<F> {
 	private final List<Worker> workers;
 	private final Thread[] threads;
 	private Long seekTimestamp = null;
-	private boolean exit = false;
+	private volatile boolean exit = false;
 
 	public FrameBuffer() {
 		this(1, 1, 1, 1);
@@ -212,46 +212,50 @@ public abstract class FrameBuffer<F> {
 
 						handleReset();
 
-						if (buffer[i].state == BufferedFrame.CLEARED) {
+						if (!exit) {
 
-							if (seekTimestamp != null) {
-								setDecoderTimestamp(workerIndex, seekTimestamp.longValue());
-								seekTimestamp = null;
-							}
+							if (buffer[i].state == BufferedFrame.CLEARED) {
 
-							buffer[i].source = decode(workerIndex);
+								if (seekTimestamp != null) {
+									setDecoderTimestamp(workerIndex, seekTimestamp.longValue());
+									seekTimestamp = null;
+								}
 
-							if (buffer[i].source == null) {
+								buffer[i].source = decode(workerIndex);
 
-								if (isEndOfVideoReached(workerIndex)) {
+								if (buffer[i].source == null) {
 
-									setDecoderTimestamp(workerIndex, 0);
+									if (isEndOfVideoReached(workerIndex)) {
 
-									if (isRepeatEnabled(workerIndex)) {
-										buffer[i].source = decode(workerIndex);
-									} else {
-										buffer[i].state = BufferedFrame.END_OF_VIDEO_REACHED;
+										setDecoderTimestamp(workerIndex, 0);
+
+										if (isRepeatEnabled(workerIndex)) {
+											buffer[i].source = decode(workerIndex);
+										} else {
+											buffer[i].state = BufferedFrame.END_OF_VIDEO_REACHED;
+										}
+
 									}
 
 								}
 
-							}
-
-							if (buffer[i].source != null) {
-								buffer[i].setTimestamp(getDecoderTimestamp(workerIndex, buffer[i].source));
-								if (preProcessorThreads > 0) {
-									buffer[i].state = BufferedFrame.DECODED;
-								} else {
-									buffer[i].state = BufferedFrame.PRE_PROCESSED;
+								if (buffer[i].source != null) {
+									buffer[i].setTimestamp(getDecoderTimestamp(workerIndex, buffer[i].source));
+									if (preProcessorThreads > 0) {
+										buffer[i].state = BufferedFrame.DECODED;
+									} else {
+										buffer[i].state = BufferedFrame.PRE_PROCESSED;
+									}
+								} else if (buffer[i].state != BufferedFrame.END_OF_VIDEO_REACHED) {
+									buffer[i].state = BufferedFrame.DECODE_FAILED;
 								}
-							} else if (buffer[i].state != BufferedFrame.END_OF_VIDEO_REACHED) {
-								buffer[i].state = BufferedFrame.DECODE_FAILED;
+
+								next();
+
+							} else {
+								Thread.sleep(0, 100); // TODO?
 							}
 
-							next();
-
-						} else {
-							Thread.sleep(0, 100);
 						}
 
 					}
@@ -285,19 +289,23 @@ public abstract class FrameBuffer<F> {
 
 						handleReset();
 
-						if (buffer[i].state == BufferedFrame.DECODED) {
+						if (!exit) {
 
-							buffer[i].source = preProcess(workerIndex, buffer[i].source);
-							if (buffer[i].source != null) {
-								buffer[i].state = BufferedFrame.PRE_PROCESSED;
+							if (buffer[i].state == BufferedFrame.DECODED) {
+
+								buffer[i].source = preProcess(workerIndex, buffer[i].source);
+								if (buffer[i].source != null) {
+									buffer[i].state = BufferedFrame.PRE_PROCESSED;
+								} else {
+									buffer[i].state = BufferedFrame.PRE_PROCESS_FAILED;
+								}
+
+								next();
+
 							} else {
-								buffer[i].state = BufferedFrame.PRE_PROCESS_FAILED;
+								Thread.sleep(0, 100); // TODO?
 							}
 
-							next();
-
-						} else {
-							Thread.sleep(0, 100);
 						}
 
 					}
@@ -331,22 +339,26 @@ public abstract class FrameBuffer<F> {
 
 						handleReset();
 
-						if (buffer[i].state == BufferedFrame.PRE_PROCESSED) {
+						if (!exit) {
 
-							buffer[i].setImage(convert(workerIndex, buffer[i].source));
-							buffer[i].getImage().setAccelerationPriority(1.0F);
+							if (buffer[i].state == BufferedFrame.PRE_PROCESSED) {
 
-							buffer[i].source = null;
-							if (postProcessorThreads > 0) {
-								buffer[i].state = BufferedFrame.CONVERTED;
+								buffer[i].setImage(convert(workerIndex, buffer[i].source));
+								buffer[i].getImage().setAccelerationPriority(1.0F);
+
+								buffer[i].source = null;
+								if (postProcessorThreads > 0) {
+									buffer[i].state = BufferedFrame.CONVERTED;
+								} else {
+									buffer[i].state = BufferedFrame.READY;
+								}
+
+								next();
+
 							} else {
-								buffer[i].state = BufferedFrame.READY;
+								Thread.sleep(0, 100); // TODO?
 							}
 
-							next();
-
-						} else {
-							Thread.sleep(0, 100);
 						}
 
 					}
@@ -380,15 +392,19 @@ public abstract class FrameBuffer<F> {
 
 						handleReset();
 
-						if (buffer[i].state == BufferedFrame.CONVERTED) {
+						if (!exit) {
 
-							postProcess(workerIndex, buffer[i].getImage());
-							buffer[i].state = BufferedFrame.READY;
+							if (buffer[i].state == BufferedFrame.CONVERTED) {
 
-							next();
+								postProcess(workerIndex, buffer[i].getImage());
+								buffer[i].state = BufferedFrame.READY;
 
-						} else {
-							Thread.sleep(0, 100);
+								next();
+
+							} else {
+								Thread.sleep(0, 100); // TODO?
+							}
+
 						}
 
 					}
@@ -410,8 +426,8 @@ public abstract class FrameBuffer<F> {
 		protected final int workerCount;
 		protected final int workerIndex;
 		protected int i = 0;
-		protected boolean reset = false;
-		protected boolean resetPerformed = false;
+		protected volatile boolean reset = false;
+		protected volatile boolean resetPerformed = false;
 
 		protected Worker(int workerCount, int workerIndex) {
 			this.workerCount = workerCount;
@@ -428,7 +444,7 @@ public abstract class FrameBuffer<F> {
 				resetPerformed = true;
 
 				while (reset) {
-					Thread.sleep(1);
+					Thread.sleep(1); // TODO?
 				}
 
 				resetPerformed = false;
@@ -457,8 +473,8 @@ public abstract class FrameBuffer<F> {
 		public static final int CONVERTED = 3;
 		public static final int READY = 4;
 
-		protected F source = null;
-		protected int state = CLEARED;
+		protected volatile F source = null;
+		protected volatile int state = CLEARED;
 
 		public BufferedFrame() {
 

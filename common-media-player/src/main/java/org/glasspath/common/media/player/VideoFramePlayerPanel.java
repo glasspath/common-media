@@ -45,12 +45,12 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 	private final KeyEventDispatcher keyEventDispatcher;
 	protected Video video = null;
 	private final Thread playbackThread;
-	private boolean playing = IVideoPlayer.DEFAULT_PLAYBACK_STATE_PLAYING;
-	private boolean repeatEnabled = true;
+	private volatile boolean playing = IVideoPlayer.DEFAULT_PLAYBACK_STATE_PLAYING;
+	private volatile boolean repeatEnabled = true;
 	private long timestamp = 0 * 1000L;
 	private boolean showSingleFrame = false;
 	private Loop loop = null;
-	protected boolean exit = false;
+	protected volatile boolean exit = false;
 
 	public VideoFramePlayerPanel(IVideoPlayer context) {
 

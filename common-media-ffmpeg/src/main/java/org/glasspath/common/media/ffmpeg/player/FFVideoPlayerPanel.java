@@ -332,7 +332,16 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	public void exit() {
 
 		if (frameBuffer != null) {
+
+			// First reset (and release) all buffered frames
+			frameBuffer.reset();
+
+			// Request exit
 			frameBuffer.exit();
+
+			// Resume to let worker threads exit
+			frameBuffer.resume();
+
 		}
 
 		super.exit();
@@ -621,6 +630,17 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	public static class FFBufferedFrame extends BufferedFrame<org.bytedeco.javacv.Frame> {
 
 		public FFBufferedFrame() {
+
+		}
+
+		@Override
+		public void reset() {
+
+			if (source != null) {
+				source.close();
+			}
+
+			super.reset();
 
 		}
 
