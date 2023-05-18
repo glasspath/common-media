@@ -28,7 +28,7 @@ import org.glasspath.common.media.h264.H264NalUnit;
 import org.glasspath.common.media.rtsp.H264ParameterSets;
 import org.glasspath.common.media.video.Resolution;
 
-public abstract class H264NalUnitRecorder {
+public abstract class H264NalUnitRecorder<T extends Recording> {
 
 	public static boolean TODO_DEBUG = false;
 
@@ -87,6 +87,8 @@ public abstract class H264NalUnitRecorder {
 
 	protected abstract void fileCreated(String filePath);
 
+	protected abstract T getRecording();
+
 	protected abstract boolean writeNalUnit(H264NalUnit nalUnit, long pts, long duration);
 
 	protected abstract long getBytesWritten();
@@ -95,7 +97,7 @@ public abstract class H264NalUnitRecorder {
 
 	protected abstract Resolution getResolution();
 
-	protected abstract boolean closeFile();
+	protected abstract boolean closeFile(T recording);
 
 	protected abstract void fileClosed(String filePath);
 
@@ -180,10 +182,10 @@ public abstract class H264NalUnitRecorder {
 
 	protected void close(boolean reset) {
 
-		if (closeFile()) {
+		if (closeFile(getRecording())) {
 			fileClosed(path);
 		} else if (TODO_DEBUG) {
-			System.err.println(name + " file not closed");
+			System.out.println(name + " warning, file not closed");
 		}
 
 		path = null;

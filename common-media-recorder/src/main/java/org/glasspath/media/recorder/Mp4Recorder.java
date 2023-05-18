@@ -22,35 +22,21 @@
  */
 package org.glasspath.media.recorder;
 
-import static org.jcodec.common.io.NIOUtils.writableChannel;
-
-import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.glasspath.common.media.h264.H264NalUnit;
 import org.glasspath.common.media.rtsp.H264ParameterSets;
 import org.glasspath.common.media.video.Resolution;
-import org.jcodec.common.Codec;
-import org.jcodec.common.MuxerTrack;
-import org.jcodec.common.VideoCodecMeta;
-import org.jcodec.common.io.SeekableByteChannel;
-import org.jcodec.common.model.ColorSpace;
 import org.jcodec.common.model.Packet;
 import org.jcodec.common.model.Packet.FrameType;
-import org.jcodec.common.model.Size;
-import org.jcodec.containers.mp4.Brand;
 
-public abstract class Mp4Recorder extends H264NalUnitRecorder {
+public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 
 	public static boolean TODO_DEBUG = false;
 	public static boolean TODO_USE_FIXED_30FPS_PTS = true;
 
-	private SeekableByteChannel sink = null;
-	private Mp4Muxer muxer = null;
-	private MuxerTrack videoTrack = null;
+	private Mp4Recording recording = null;
 	private int frameNumber = 0;
-	private long bytesWritten = 0;
 
 	private long todoFixed30FpsPts = 0;
 
@@ -61,37 +47,26 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder {
 	@Override
 	protected boolean createFile(String recordPath, Resolution resolution, H264ParameterSets parameterSets, long pts, long created) {
 
-		try {
+		frameNumber = 0;
 
-			if (muxer != null) {
-				System.err.println("Mp4Recorder: Muxer was not closed!");
-			}
+		try {
 
 			if (TODO_DEBUG) {
 				System.out.println("Creating MP4 muxer for file: " + recordPath);
 			}
 
-			sink = writableChannel(new File(recordPath));
-			muxer = Mp4Muxer.createMp4Muxer(sink, Brand.MP4);
-			muxer.setCreated(created);
-
-			VideoCodecMeta videoCodecMeta = VideoCodecMeta.createSimpleVideoCodecMeta(new Size(getResolution().getWidth(), getResolution().getHeight()), ColorSpace.YUV420);
-
-			videoTrack = muxer.addVideoTrack(Codec.H264, videoCodecMeta);
-
-			if (videoTrack != null && parameterSets != null && parameterSets.sequenceParameterSet != null && parameterSets.pictureParameterSet != null) {
+			recording = new Mp4Recording(recordPath, resolution, created);
+			if (recording.isReady() && parameterSets != null && parameterSets.sequenceParameterSet != null && parameterSets.pictureParameterSet != null) {
 
 				Packet frame = nextFrame(parameterSets.sequenceParameterSet, pts, 0);
 				if (frame != null) {
 
-					videoTrack.addFrame(frame);
-					bytesWritten += frame.data.limit();
+					recording.addFrame(frame);
 
 					frame = nextFrame(parameterSets.pictureParameterSet, pts, 0);
 					if (frame != null) {
 
-						videoTrack.addFrame(frame);
-						bytesWritten += frame.data.limit();
+						recording.addFrame(frame);
 
 						return true;
 
@@ -110,16 +85,20 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder {
 	}
 
 	@Override
+	protected Mp4Recording getRecording() {
+		return recording;
+	}
+
+	@Override
 	protected boolean writeNalUnit(H264NalUnit nalUnit, long pts, long duration) {
 
-		if (videoTrack != null) {
+		if (recording.isReady()) {
 
 			try {
 
 				Packet frame = nextFrame(nalUnit, pts, duration);
 				if (frame != null) {
-					videoTrack.addFrame(frame);
-					bytesWritten += frame.data.limit();
+					recording.addFrame(frame);
 				}
 
 			} catch (Exception e) {
@@ -134,51 +113,27 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder {
 
 	@Override
 	protected long getBytesWritten() {
-		return bytesWritten;
+		return recording != null ? recording.getBytesWritten() : 0;
 	}
-	
-	protected abstract UUIDBox createUUIDBox();
+
+	protected UUIDBox createUUIDBox() {
+		return null;
+	}
 
 	@Override
-	protected boolean closeFile() {
+	protected boolean closeFile(Mp4Recording recording) {
 
 		boolean result = true;
 
-		if (muxer != null) {
-
-			try {
-				muxer.setUUIDBox(createUUIDBox());
-				muxer.finish();
-			} catch (IOException e) {
-				result = false;
-				e.printStackTrace();
-			}
-
-			if (sink != null) {
-
-				try {
-					sink.close();
-				} catch (IOException e) {
-					result = false;
-					e.printStackTrace();
-				}
-
-			}
-
+		if (recording != null) {
+			result = recording.close(createUUIDBox());
 		} else {
 			result = false;
 		}
 
-		videoTrack = null;
-		muxer = null;
-		sink = null;
-
 		if (TODO_DEBUG) {
 			System.out.println(frameNumber + " NAL units recorded");
 		}
-
-		frameNumber = 0;
-		bytesWritten = 0;
 
 		return result;
 
