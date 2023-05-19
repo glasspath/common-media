@@ -43,7 +43,8 @@ public class Mp4Recording extends Recording {
 	private Mp4Muxer muxer = null;
 	private MuxerTrack videoTrack = null;
 
-	public Mp4Recording(String path, Resolution resolution, long created) {
+	public Mp4Recording(String path, Resolution resolution, long created, int timeScale) {
+		super(created, timeScale);
 
 		try {
 
@@ -67,8 +68,10 @@ public class Mp4Recording extends Recording {
 	}
 
 	public void addFrame(Packet frame) throws IOException {
+
 		videoTrack.addFrame(frame);
 		bytesWritten += frame.data.limit();
+
 	}
 
 	@Override

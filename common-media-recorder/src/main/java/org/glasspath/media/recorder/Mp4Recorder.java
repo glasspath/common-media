@@ -55,7 +55,7 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 				System.out.println("Creating MP4 muxer for file: " + recordPath);
 			}
 
-			recording = new Mp4Recording(recordPath, resolution, created);
+			recording = new Mp4Recording(recordPath, resolution, created, getTimeScale());
 			if (recording.isReady() && parameterSets != null && parameterSets.sequenceParameterSet != null && parameterSets.pictureParameterSet != null) {
 
 				Packet frame = nextFrame(parameterSets.sequenceParameterSet, pts, 0);
@@ -67,6 +67,7 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 					if (frame != null) {
 
 						recording.addFrame(frame);
+						recording.ptsStart = frame.pts;
 
 						return true;
 
@@ -99,6 +100,7 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 				Packet frame = nextFrame(nalUnit, pts, duration);
 				if (frame != null) {
 					recording.addFrame(frame);
+					recording.ptsEnd = frame.pts + frame.duration;
 				}
 
 			} catch (Exception e) {
@@ -118,6 +120,13 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 
 	protected UUIDBox createUUIDBox() {
 		return null;
+	}
+
+	@Override
+	protected void recordingEnded(long timestamp) {
+		if (recording != null) {
+			recording.ended = timestamp;
+		}
 	}
 
 	@Override

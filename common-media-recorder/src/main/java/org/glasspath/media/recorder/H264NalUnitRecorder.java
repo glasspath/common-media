@@ -97,6 +97,8 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 
 	protected abstract Resolution getResolution();
 
+	protected abstract void recordingEnded(long timestamp);
+
 	protected abstract boolean closeFile(T recording);
 
 	protected abstract void fileClosed(String filePath);
@@ -181,6 +183,8 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 	}
 
 	protected void close(boolean reset) {
+
+		recordingEnded(System.currentTimeMillis());
 
 		if (closeFile(getRecording())) {
 			fileClosed(path);

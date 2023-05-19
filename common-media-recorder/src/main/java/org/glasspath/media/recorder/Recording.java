@@ -24,14 +24,44 @@ package org.glasspath.media.recorder;
 
 public abstract class Recording {
 
+	protected final long created;
+	protected final int timeScale;
+	protected long ptsStart = 0L;
+	protected long ptsEnd = 0L;
 	protected long bytesWritten = 0;
+	protected long ended = 0L;
 
-	public Recording() {
+	public Recording(long created, int timeScale) {
+		this.created = created;
+		this.timeScale = timeScale;
+	}
 
+	public long getCreated() {
+		return created;
+	}
+
+	public int getTimeScale() {
+		return timeScale;
+	}
+
+	public long getDuration() {
+		if (timeScale >= 1000 && ptsEnd > ptsStart) {
+			return toMillis(ptsEnd - ptsStart);
+		} else {
+			return 0;
+		}
+	}
+
+	private long toMillis(long time) {
+		return time / (timeScale / 1000);
 	}
 
 	public long getBytesWritten() {
 		return bytesWritten;
+	}
+
+	public long getEnded() {
+		return ended;
 	}
 
 	public abstract boolean close();
