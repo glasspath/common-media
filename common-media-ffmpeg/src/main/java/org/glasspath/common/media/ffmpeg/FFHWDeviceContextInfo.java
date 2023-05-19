@@ -51,8 +51,9 @@ public final class FFHWDeviceContextInfo {
 	public void release() {
 		if (!released) {
 			released = true;
-			av_free(hwConfig);
-			av_free(hwDeviceContext);
+			// TODO: Causes crashes on MacOS
+			// av_free(hwConfig);
+			// av_free(hwDeviceContext);
 		}
 	}
 

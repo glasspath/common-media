@@ -88,8 +88,9 @@ public class FFmpegUtils {
 			AVBufferRef hwDeviceContext = avutil.av_hwdevice_ctx_alloc(deviceType);
 			if (hwDeviceContext == null || avutil.av_hwdevice_ctx_create(hwDeviceContext, deviceType, (String) null, null, 0) < 0) {
 				System.err.println("HW accel not supported for type " + deviceType);
-				avutil.av_free(hwConfig);
-				avutil.av_free(hwDeviceContext);
+				// TODO: Causes crashes on MacOS
+				// avutil.av_free(hwConfig);
+				// avutil.av_free(hwDeviceContext);
 			} else {
 				System.out.println("HW accel created for type " + deviceType);
 				hwDeviceContextInfo = new FFHWDeviceContextInfo(hwConfig, hwDeviceContext);
