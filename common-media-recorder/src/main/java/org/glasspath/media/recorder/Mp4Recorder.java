@@ -33,12 +33,9 @@ import org.jcodec.common.model.Packet.FrameType;
 public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 
 	public static boolean TODO_DEBUG = false;
-	public static boolean TODO_USE_FIXED_30FPS_PTS = true;
 
 	private Mp4Recording recording = null;
 	private int frameNumber = 0;
-
-	private long todoFixed30FpsPts = 0;
 
 	public Mp4Recorder() {
 
@@ -180,18 +177,7 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 			// Tape timecode: https://github.com/jcodec/jcodec/issues/21
 			// Just ignore, should be null. This is used by the older brother of MP4 - Apple Quicktime which supports tape timecode
 
-			if (TODO_USE_FIXED_30FPS_PTS) {
-
-				duration = 3333;
-				frame = new Packet(byteBuffer, todoFixed30FpsPts, getTimeScale(), duration, frameNumber, frameType, null, frameNumber);
-				todoFixed30FpsPts += duration;
-
-			} else {
-				frame = new Packet(byteBuffer, pts, getTimeScale(), duration, frameNumber, frameType, null, frameNumber);
-			}
-
-			// frame = new Packet(byteBuffer, pts, getTimeScale(), duration, frameNumber, frameType, null, frameNumber);
-			// frame = MP4Packet.createMP4Packet(byteBuffer, pts, getTimeScale(), duration, frameNumber, frameType, null, frameNumber, pts, frameNumber);
+			frame = new Packet(byteBuffer, pts, getTimeScale(), duration, frameNumber, frameType, null, frameNumber);
 
 			frameNumber++;
 
