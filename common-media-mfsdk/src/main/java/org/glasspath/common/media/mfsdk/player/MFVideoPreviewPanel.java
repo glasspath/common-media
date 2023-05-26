@@ -25,9 +25,9 @@ package org.glasspath.common.media.mfsdk.player;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
 import org.glasspath.common.media.h264.H264NalUnit;
@@ -170,10 +170,13 @@ public abstract class MFVideoPreviewPanel extends EvrCanvasPanel implements IVid
 	}
 
 	@Override
-	public void populateViewMenu(JMenu menu, Action editOverlayAction) {
+	public void populateViewMenu(JMenu menu, JMenuItem overlayMenuItem) {
 
 		menu.add(createZoomMenu());
 		menu.addSeparator();
+		if (overlayMenuItem != null) {
+			menu.add(overlayMenuItem);
+		}
 		menu.add(createResetViewMenuItem());
 		
 	}

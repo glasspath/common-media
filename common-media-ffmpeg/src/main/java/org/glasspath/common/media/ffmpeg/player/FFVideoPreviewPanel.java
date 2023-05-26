@@ -26,9 +26,9 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
 import org.glasspath.common.media.ffmpeg.FFH264NalUnitDecoderThread;
@@ -182,14 +182,14 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 	}
 
 	@Override
-	public void populateViewMenu(JMenu menu, Action editOverlayAction) {
+	public void populateViewMenu(JMenu menu, JMenuItem overlayMenuItem) {
 
 		menu.add(createZoomMenu());
 		menu.add(createRotateMenu());
 		menu.add(createFlipMenu());
 		menu.addSeparator();
-		if (editOverlayAction != null) {
-			menu.add(editOverlayAction);
+		if (overlayMenuItem != null) {
+			menu.add(overlayMenuItem);
 		}
 		menu.add(createShowOverlayMenuItem(null)); // TODO: Pass preferences
 		menu.add(createResetViewMenuItem());
