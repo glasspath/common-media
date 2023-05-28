@@ -44,7 +44,7 @@ public class Mp4Recording extends Recording {
 	private MuxerTrack videoTrack = null;
 
 	public Mp4Recording(String path, Resolution resolution, long created, int timeScale) {
-		super(created, timeScale);
+		super(path, created, timeScale);
 
 		try {
 

@@ -24,6 +24,7 @@ package org.glasspath.media.recorder;
 
 public abstract class Recording {
 
+	protected String path = null;
 	protected final long created;
 	protected final int timeScale;
 	protected long ptsStart = 0L;
@@ -31,9 +32,18 @@ public abstract class Recording {
 	protected long bytesWritten = 0;
 	protected long ended = 0L;
 
-	public Recording(long created, int timeScale) {
+	public Recording(String path, long created, int timeScale) {
+		this.path = path;
 		this.created = created;
 		this.timeScale = timeScale;
+	}
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
 	}
 
 	public long getCreated() {
