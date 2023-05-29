@@ -28,12 +28,14 @@ import javax.swing.JComponent;
 
 public interface IOverlay {
 
+	public JComponent getComponent();
+
 	public int getWidth();
 
 	public int getHeight();
 
 	public void setTimestamp(long timestamp);
 
-	public void paint(Graphics g, JComponent component);
+	public void paintOverlay(Graphics g, JComponent component);
 
 }

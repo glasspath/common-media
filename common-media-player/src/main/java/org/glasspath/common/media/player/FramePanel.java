@@ -150,6 +150,9 @@ public class FramePanel extends JPanel {
 		addMouseMotionListener(mouseListener);
 		addMouseWheelListener(mouseListener);
 
+		setOpaque(false);
+		setLayout(null);
+
 	}
 
 	public Frame getFrame() {
@@ -165,7 +168,18 @@ public class FramePanel extends JPanel {
 	}
 
 	public void setOverlay(IOverlay overlay) {
+
+		if (this.overlay != null && this.overlay.getComponent() != null) {
+			remove(this.overlay.getComponent());
+		}
+
 		this.overlay = overlay;
+
+		if (overlay != null && overlay.getComponent() != null) {
+			overlay.getComponent().setBounds(-(overlay.getWidth() / 2), -(overlay.getHeight() / 2), overlay.getWidth(), overlay.getHeight());
+			add(overlay.getComponent());
+		}
+
 	}
 
 	public boolean isOverlayVisible() {
@@ -300,7 +314,6 @@ public class FramePanel extends JPanel {
 
 	@Override
 	public void paint(Graphics g) {
-		// super.paint(g);
 
 		w = getWidth();
 		h = getHeight();
@@ -364,7 +377,7 @@ public class FramePanel extends JPanel {
 			System.out.println("Frame image not yet ready..");
 		}
 
-		if (overlayVisible && overlay != null) {
+		if (overlayVisible && overlay != null && overlay.getComponent() == null) {
 
 			if (image == null) {
 
@@ -397,7 +410,7 @@ public class FramePanel extends JPanel {
 			}
 
 			g2d.translate(x, y);
-			overlay.paint(g2d, this);
+			overlay.paintOverlay(g2d, this);
 
 		}
 
@@ -411,6 +424,24 @@ public class FramePanel extends JPanel {
 
 			fpsRepaintCount = 0;
 			lastFpsMeasurement = System.currentTimeMillis();
+
+		}
+
+		if (image != null) {
+
+			if (overlayVisible && overlay != null && overlay.getComponent() != null) {
+
+				if (image.getWidth() != overlay.getWidth() || image.getHeight() != overlay.getHeight()) {
+
+					// TODO: For now we only fit width (and assume ratio is equal)
+					double scale = (double) image.getWidth() / (double) overlay.getWidth();
+					g2d.scale(scale, scale);
+
+				}
+
+				super.paint(g);
+
+			}
 
 		}
 
