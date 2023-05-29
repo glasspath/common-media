@@ -384,6 +384,16 @@ public class FramePanel extends JPanel {
 				x = -(overlay.getWidth() / 2);
 				y = -(overlay.getHeight() / 2);
 
+			} else if (image.getWidth() != overlay.getWidth() || image.getHeight() != overlay.getHeight()) {
+
+				// TODO: For now we only fit width (and assume ratio is equal)
+				double scale = (double) image.getWidth() / (double) overlay.getWidth();
+				g2d.scale(scale, scale);
+
+				double translateX = ((overlay.getWidth() - image.getWidth()) / 2);
+				double translateY = ((overlay.getHeight() - image.getHeight()) / 2);
+				g2d.translate(-translateX, -translateY);
+
 			}
 
 			g2d.translate(x, y);
