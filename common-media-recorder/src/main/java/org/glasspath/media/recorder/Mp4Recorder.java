@@ -111,7 +111,12 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 	}
 
 	@Override
-	protected long getBytesWritten() {
+	public int getFrameNumber() {
+		return frameNumber;
+	}
+
+	@Override
+	public long getBytesWritten() {
 		return recording != null ? recording.getBytesWritten() : 0;
 	}
 
