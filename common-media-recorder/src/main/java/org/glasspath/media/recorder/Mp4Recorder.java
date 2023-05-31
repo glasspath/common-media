@@ -35,7 +35,6 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 	public static boolean TODO_DEBUG = false;
 
 	private Mp4Recording recording = null;
-	private int frameNumber = 0;
 
 	public Mp4Recorder() {
 
@@ -43,8 +42,6 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 
 	@Override
 	protected boolean createFile(String recordPath, Resolution resolution, H264ParameterSets parameterSets, long pts, long created) {
-
-		frameNumber = 0;
 
 		try {
 
@@ -55,12 +52,12 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 			recording = new Mp4Recording(recordPath, resolution, created, getTimeScale());
 			if (recording.isReady() && parameterSets != null && parameterSets.sequenceParameterSet != null && parameterSets.pictureParameterSet != null) {
 
-				Packet frame = nextFrame(parameterSets.sequenceParameterSet, pts, 0);
+				Packet frame = nextFrame(parameterSets.sequenceParameterSet, pts, 0, recording.frameCount);
 				if (frame != null) {
 
 					recording.addFrame(frame);
 
-					frame = nextFrame(parameterSets.pictureParameterSet, pts, 0);
+					frame = nextFrame(parameterSets.pictureParameterSet, pts, 0, recording.frameCount);
 					if (frame != null) {
 
 						recording.addFrame(frame);
@@ -94,7 +91,7 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 
 			try {
 
-				Packet frame = nextFrame(nalUnit, pts, duration);
+				Packet frame = nextFrame(nalUnit, pts, duration, recording.frameCount);
 				if (frame != null) {
 					recording.addFrame(frame);
 					recording.ptsEnd = frame.pts + frame.duration;
@@ -111,12 +108,7 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 	}
 
 	@Override
-	public int getFrameNumber() {
-		return frameNumber;
-	}
-
-	@Override
-	public long getBytesWritten() {
+	protected long getBytesWritten() {
 		return recording != null ? recording.getBytesWritten() : 0;
 	}
 
@@ -137,20 +129,22 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 		boolean result = true;
 
 		if (recording != null) {
+
 			result = recording.close(createUUIDBox());
+
+			if (TODO_DEBUG) {
+				System.out.println(recording.frameCount + " NAL units recorded");
+			}
+
 		} else {
 			result = false;
-		}
-
-		if (TODO_DEBUG) {
-			System.out.println(frameNumber + " NAL units recorded");
 		}
 
 		return result;
 
 	}
 
-	private Packet nextFrame(H264NalUnit nalUnit, long pts, long duration) {
+	private Packet nextFrame(H264NalUnit nalUnit, long pts, long duration, long frameNumber) {
 
 		Packet frame = null;
 
@@ -182,9 +176,7 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 			// Tape timecode: https://github.com/jcodec/jcodec/issues/21
 			// Just ignore, should be null. This is used by the older brother of MP4 - Apple Quicktime which supports tape timecode
 
-			frame = new Packet(byteBuffer, pts, getTimeScale(), duration, frameNumber, frameType, null, frameNumber);
-
-			frameNumber++;
+			frame = new Packet(byteBuffer, pts, getTimeScale(), duration, frameNumber, frameType, null, (int) frameNumber);
 
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -70,6 +70,8 @@ public class Mp4Recording extends Recording {
 	public void addFrame(Packet frame) throws IOException {
 
 		videoTrack.addFrame(frame);
+
+		frameCount++;
 		bytesWritten += frame.data.limit();
 
 	}

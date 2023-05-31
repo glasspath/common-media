@@ -116,9 +116,7 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 
 	protected abstract boolean writeNalUnit(H264NalUnit nalUnit, long pts, long duration);
 
-	public abstract int getFrameNumber();
-
-	public abstract long getBytesWritten();
+	protected abstract long getBytesWritten();
 
 	protected abstract long getFileSizeLimit();
 

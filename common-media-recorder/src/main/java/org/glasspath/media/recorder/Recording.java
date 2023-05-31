@@ -29,6 +29,7 @@ public abstract class Recording {
 	protected final int timeScale;
 	protected long ptsStart = 0L;
 	protected long ptsEnd = 0L;
+	protected long frameCount = 0;
 	protected long bytesWritten = 0;
 	protected long ended = 0L;
 
@@ -64,6 +65,10 @@ public abstract class Recording {
 
 	private long toMillis(long time) {
 		return time / (timeScale / 1000);
+	}
+
+	public long getFrameCount() {
+		return frameCount;
 	}
 
 	public long getBytesWritten() {
