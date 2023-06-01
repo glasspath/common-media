@@ -29,8 +29,8 @@ public abstract class Recording {
 	protected final int timeScale;
 	protected long ptsStart = 0L;
 	protected long ptsEnd = 0L;
-	protected long frameCount = 0;
-	protected long bytesWritten = 0;
+	protected long frameCount = 0L;
+	protected long bytesWritten = 0L;
 	protected long ended = 0L;
 
 	public Recording(String path, long created, int timeScale) {
@@ -59,7 +59,7 @@ public abstract class Recording {
 		if (timeScale >= 1000 && ptsEnd > ptsStart) {
 			return toMillis(ptsEnd - ptsStart);
 		} else {
-			return 0;
+			return 0L;
 		}
 	}
 

@@ -42,13 +42,13 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 	private int timeScale = 100000;
 	private PtsMode ptsMode = PtsMode.FIXED_FRAME_RATE;
 	private double fixedFrameRate = 30.0;
-	private long ptsOffset = 0;
+	private long ptsOffset = 0L;
 	private String path = null;
 	private boolean recording = false;
 	private H264NalUnit nalUnit = null;
-	private long fixedFrameRateDuration = 3333;
-	private long ptsCorrection = 0;
-	private long pts = 0;
+	private long fixedFrameRateDuration = 3333L;
+	private long ptsCorrection = 0L;
+	private long pts = 0L;
 
 	public H264NalUnitRecorder() {
 
@@ -234,8 +234,8 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 
 		path = null;
 		recording = false;
-		ptsCorrection = 0;
-		pts = 0;
+		ptsCorrection = 0L;
+		pts = 0L;
 
 		if (reset) {
 			nalUnit = null;
