@@ -24,10 +24,11 @@ package org.glasspath.common.media.video;
 
 public enum Resolution {
 
-	VGA("VGA (640x480)", 640, 480),
+	SD_480P("SD 480p (640x480)", 640, 480),
 	SVGA("SVGA (800x600)", 800, 600),
 	HD_720P("HD 720p (1280x720)", 1280, 720),
-	FHD_1080P("FHD 1080p (1920x1080)", 1920, 1080);
+	FHD_1080P("FHD 1080p (1920x1080)", 1920, 1080),
+	QHD_1440P("QHD 1440p (2560x1440)", 2560, 1440);
 
 	private final String name;
 	private final int width;
