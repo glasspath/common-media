@@ -31,8 +31,8 @@ public class DefaultVideo extends Video {
 	public static boolean TODO_DEBUG = false;
 
 	private final FrameLoader frameLoader;
-	private int width = Resolution.HD_720P.getWidth();
-	private int height = Resolution.HD_720P.getHeight();
+	private int width = Resolution.W1280_H720.getWidth();
+	private int height = Resolution.W1280_H720.getHeight();
 	private long timestamp = 0L;
 	private long duration = 0L;
 	private Double frameRate = null;
@@ -40,15 +40,15 @@ public class DefaultVideo extends Video {
 	private final List<MetadataTimestamp> metadataTimestamps = new ArrayList<>();
 
 	public DefaultVideo(String name, String path) {
-		this(name, path, null, true, Resolution.HD_720P.getWidth(), Resolution.HD_720P.getHeight());
+		this(name, path, null, true, Resolution.W1280_H720.getWidth(), Resolution.W1280_H720.getHeight());
 	}
 
 	public DefaultVideo(String name, String path, FrameLoader frameLoader) {
-		this(name, path, null, true, Resolution.HD_720P.getWidth(), Resolution.HD_720P.getHeight());
+		this(name, path, null, true, Resolution.W1280_H720.getWidth(), Resolution.W1280_H720.getHeight());
 	}
 
 	public DefaultVideo(String name, String path, FrameLoader frameLoader, boolean closeFile) {
-		this(name, path, frameLoader, closeFile, Resolution.HD_720P.getWidth(), Resolution.HD_720P.getHeight());
+		this(name, path, frameLoader, closeFile, Resolution.W1280_H720.getWidth(), Resolution.W1280_H720.getHeight());
 	}
 
 	public DefaultVideo(String name, String path, FrameLoader frameLoader, boolean closeFile, int width, int height) {

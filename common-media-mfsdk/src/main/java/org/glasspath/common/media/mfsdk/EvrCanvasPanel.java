@@ -55,7 +55,7 @@ public abstract class EvrCanvasPanel extends JPanel {
 	public static final double MAX_SCALE = 25.0;
 
 	protected final EvrCanvas evrCanvas;
-	private Resolution resolution = Resolution.HD_720P;
+	private Resolution resolution = Resolution.W1280_H720;
 	private int translateX = 0;
 	private int translateY = 0;
 	private double scale = 1.0;

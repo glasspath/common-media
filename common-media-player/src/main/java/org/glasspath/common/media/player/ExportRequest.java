@@ -28,8 +28,8 @@ import org.glasspath.common.media.video.Resolution;
 
 public abstract class ExportRequest {
 
-	public static final int DEFAULT_WIDTH = (int) (Resolution.HD_720P.getWidth() * 0.5);
-	public static final int DEFAULT_HEIGHT = (int) (Resolution.HD_720P.getHeight() * 0.5);
+	public static final int DEFAULT_WIDTH = (int) (Resolution.W1280_H720.getWidth() * 0.5);
+	public static final int DEFAULT_HEIGHT = (int) (Resolution.W1280_H720.getHeight() * 0.5);
 	public static final int DEFAULT_INTERVAL = 100;
 
 	private final File file;
