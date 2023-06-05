@@ -178,9 +178,9 @@ public abstract class MFVideoPreviewPanel extends EvrCanvasPanel implements IVid
 			menu.add(overlayMenuItem);
 		}
 		menu.add(createResetViewMenuItem());
-		
+
 	}
-	
+
 	@Override
 	public IOverlay getOverlay() {
 		return null; // TODO
@@ -213,7 +213,12 @@ public abstract class MFVideoPreviewPanel extends EvrCanvasPanel implements IVid
 
 	@Override
 	public void start() {
+		// TODO?
+	}
 
+	@Override
+	public void setSelected(boolean selected) {
+		// TODO
 	}
 
 	@Override

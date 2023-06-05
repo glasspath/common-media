@@ -49,6 +49,8 @@ public interface IVideoPreviewPanel {
 
 	public void start();
 
+	public void setSelected(boolean selected);
+
 	public void close();
 
 }

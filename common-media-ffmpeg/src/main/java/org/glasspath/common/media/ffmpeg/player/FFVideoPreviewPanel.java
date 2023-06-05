@@ -54,8 +54,9 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 	private final List<H264NalUnit> resumeNalUnits = new ArrayList<>();
 	private final Frame previewFrame = new Frame();
 	private H264ParameterSets parameterSets = null;
-	private boolean parameterSetsSent = false;
-	private boolean previewEnabled = true;
+	private volatile boolean parameterSetsSent = false;
+	private volatile boolean previewEnabled = true;
+	private volatile boolean selected = false;
 
 	public FFVideoPreviewPanel(IVideoPlayerListener previewPanelListener, Resolution resolution) {
 
@@ -72,49 +73,53 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 			@Override
 			public void nalUnitReceived(H264NalUnit nalUnit) {
 
-				previewPanelListener.timestampChanged(nalUnit.receivedAt);
+				if (selected) {
 
-				if (decoderThread != null) {
+					previewPanelListener.timestampChanged(nalUnit.receivedAt);
 
-					if (!parameterSetsSent) {
+					if (decoderThread != null) {
 
-						resumeNalUnits.clear();
-						getResumeNalUnits(resumeNalUnits);
+						if (!parameterSetsSent) {
 
-						if (resumeNalUnits.size() >= 3) {
+							resumeNalUnits.clear();
+							getResumeNalUnits(resumeNalUnits);
 
-							if (TODO_DEBUG) {
-								System.out.println("FFVideoPreviewPanel, sending resume nal units, size = " + resumeNalUnits.size());
-							}
+							if (resumeNalUnits.size() >= 3) {
 
-							for (H264NalUnit resumeNalUnit : resumeNalUnits) {
-								if (resumeNalUnit == nalUnit) {
-									break;
-								} else {
-									decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, resumeNalUnit);
+								if (TODO_DEBUG) {
+									System.out.println("FFVideoPreviewPanel, sending resume nal units, size = " + resumeNalUnits.size());
 								}
+
+								for (H264NalUnit resumeNalUnit : resumeNalUnits) {
+									if (resumeNalUnit == nalUnit) {
+										break;
+									} else {
+										decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, resumeNalUnit);
+									}
+								}
+
+								parameterSetsSent = true;
+
+							} else if (parameterSets != null && nalUnit.isIFrame()) {
+
+								if (TODO_DEBUG) {
+									System.out.println("FFVideoPreviewPanel, sending parameter sets");
+								}
+
+								decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, parameterSets.sequenceParameterSet);
+								decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, parameterSets.pictureParameterSet);
+
+								parameterSetsSent = true;
+
 							}
 
-							parameterSetsSent = true;
-
-						} else if (parameterSets != null && nalUnit.isIFrame()) {
-
-							if (TODO_DEBUG) {
-								System.out.println("FFVideoPreviewPanel, sending parameter sets");
-							}
-
-							decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, parameterSets.sequenceParameterSet);
-							decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, parameterSets.pictureParameterSet);
-
-							parameterSetsSent = true;
+							resumeNalUnits.clear();
 
 						}
 
-						resumeNalUnits.clear();
+						decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, nalUnit);
 
 					}
-
-					decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, nalUnit);
 
 				}
 
@@ -143,9 +148,6 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 
 					@Override
 					public void run() {
-
-						// TODO?
-						// previewPanelListener.timelineUpdate(timestamp / 100);
 
 						previewFrame.setImage(image);
 						repaint();
@@ -203,14 +205,7 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 
 	@Override
 	public void setPreviewEnabled(boolean previewEnabled) {
-		/* TODO
 		this.previewEnabled = previewEnabled;
-		
-		decoderThread.reset();
-		*/
-		// setImageEnabled(previewEnabled);
-		// repaint();
-
 	}
 
 	@Override
@@ -219,8 +214,13 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 	}
 
 	@Override
+	public void setSelected(boolean selected) {
+		this.selected = selected;
+		parameterSetsSent = false;
+	}
+
+	@Override
 	public void close() {
-		// setPreviewEnabled(false);
 		uninstallStreamListener(streamListener);
 		decoderThread.exit();
 	}
