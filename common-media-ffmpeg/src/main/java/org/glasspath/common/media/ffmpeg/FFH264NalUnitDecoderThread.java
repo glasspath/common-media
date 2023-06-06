@@ -43,6 +43,7 @@ public abstract class FFH264NalUnitDecoderThread {
 
 	public static final int QUEUE_ACTION_ADD_NAL_UNIT = 1;
 	public static final int QUEUE_ACTION_COPY = 2;
+	public static final int QUEUE_ACTION_RESET = 3;
 
 	private final Thread nalUnitDecoderThread;
 	private FFH264NalUnitDecoder decoder = null;
@@ -238,6 +239,8 @@ public abstract class FFH264NalUnitDecoderThread {
 		} else if (action == QUEUE_ACTION_COPY) {
 			nalUnitQueueCopy = nalUnitQueue;
 			nalUnitQueue = new ArrayList<>(INITIAL_NAL_UNIT_QUEUE_SIZE);
+		} else if (action == QUEUE_ACTION_RESET) {
+			reset();
 		}
 	}
 
