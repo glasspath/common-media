@@ -41,10 +41,6 @@ public abstract class FFH264NalUnitDecoderThread {
 	public static final int FPS_MEASUREMENT_INTERVAL = 3000;
 	public static final int SLEEP_INTERVAL = 5;
 
-	public static final int QUEUE_ACTION_ADD_NAL_UNIT = 1;
-	public static final int QUEUE_ACTION_COPY = 2;
-	public static final int QUEUE_ACTION_RESET = 3;
-
 	private final Thread nalUnitDecoderThread;
 	private FFH264NalUnitDecoder decoder = null;
 	private FFVideoFrameConverter converter = null;
@@ -76,7 +72,7 @@ public abstract class FFH264NalUnitDecoderThread {
 
 					if (nalUnitQueue.size() > 0) {
 
-						performSynchronizedAction(QUEUE_ACTION_COPY, null);
+						copyQueue();
 
 						if (sps == null && pps == null && parameterSets != null && parameterSets.sequenceParameterSet != null && parameterSets.pictureParameterSet != null) {
 							sps = parameterSets.sequenceParameterSet;
@@ -233,18 +229,16 @@ public abstract class FFH264NalUnitDecoderThread {
 		nalUnitDecoderThread.start();
 	}
 
-	public synchronized void performSynchronizedAction(int action, H264NalUnit nalUnit) {
-		if (action == QUEUE_ACTION_ADD_NAL_UNIT) {
-			nalUnitQueue.add(nalUnit);
-		} else if (action == QUEUE_ACTION_COPY) {
-			nalUnitQueueCopy = nalUnitQueue;
-			nalUnitQueue = new ArrayList<>(INITIAL_NAL_UNIT_QUEUE_SIZE);
-		} else if (action == QUEUE_ACTION_RESET) {
-			reset();
-		}
+	public synchronized void addNalUnit(H264NalUnit nalUnit) {
+		nalUnitQueue.add(nalUnit);
 	}
 
-	public void reset() {
+	private synchronized void copyQueue() {
+		nalUnitQueueCopy = nalUnitQueue;
+		nalUnitQueue = new ArrayList<>(INITIAL_NAL_UNIT_QUEUE_SIZE);
+	}
+
+	public synchronized void reset() {
 
 		sps = null;
 		pps = null;

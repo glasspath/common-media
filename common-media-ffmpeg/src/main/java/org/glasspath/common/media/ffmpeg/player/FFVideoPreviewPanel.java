@@ -90,13 +90,13 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 									System.out.println("FFVideoPreviewPanel, sending resume nal units, size = " + resumeNalUnits.size());
 								}
 
-								decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_RESET, null);
+								decoderThread.reset();
 
 								for (H264NalUnit resumeNalUnit : resumeNalUnits) {
 									if (resumeNalUnit == nalUnit) {
 										break;
 									} else {
-										decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, resumeNalUnit);
+										decoderThread.addNalUnit(resumeNalUnit);
 									}
 								}
 
@@ -108,9 +108,9 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 									System.out.println("FFVideoPreviewPanel, sending parameter sets");
 								}
 
-								decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_RESET, null);
-								decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, parameterSets.sequenceParameterSet);
-								decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, parameterSets.pictureParameterSet);
+								decoderThread.reset();
+								decoderThread.addNalUnit(parameterSets.sequenceParameterSet);
+								decoderThread.addNalUnit(parameterSets.pictureParameterSet);
 
 								parameterSetsSent = true;
 
@@ -120,7 +120,7 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 
 						}
 
-						decoderThread.performSynchronizedAction(FFH264NalUnitDecoderThread.QUEUE_ACTION_ADD_NAL_UNIT, nalUnit);
+						decoderThread.addNalUnit(nalUnit);
 
 					}
 
