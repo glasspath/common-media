@@ -41,6 +41,7 @@ import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameRecorder.Exception;
+import org.glasspath.common.media.video.VideoConfiguration;
 
 public class FFH264NalUnitDecoder {
 
@@ -59,6 +60,7 @@ public class FFH264NalUnitDecoder {
 		}
 	}
 
+	private final VideoConfiguration videoConfiguration;
 	private int imageWidth = 1280;
 	private int imageHeight = 720;
 	private AVCodecContext video_c;
@@ -72,7 +74,11 @@ public class FFH264NalUnitDecoder {
 	private Frame frame;
 
 	public FFH264NalUnitDecoder() {
+		this(VideoConfiguration.FF_H264);
+	}
 
+	public FFH264NalUnitDecoder(VideoConfiguration videoConfiguration) {
+		this.videoConfiguration = videoConfiguration;
 	}
 
 	public int getImageWidth() {
@@ -102,10 +108,15 @@ public class FFH264NalUnitDecoder {
 		pkt = new AVPacket().retainReference();
 		pkt.stream_index(-1);
 
-		AVCodec avCodec = avcodec.avcodec_find_decoder(avcodec.AV_CODEC_ID_H264);
+		AVCodec avCodec;
+		if (videoConfiguration == VideoConfiguration.FF_H264_CUVID) {
+			avCodec = avcodec.avcodec_find_decoder_by_name("h264_cuvid");
+		} else if (videoConfiguration == VideoConfiguration.FF_H264_QSV) {
+			avCodec = avcodec.avcodec_find_decoder_by_name("h264_qsv");
+		} else {
+			avCodec = avcodec.avcodec_find_decoder(avcodec.AV_CODEC_ID_H264);
+		}
 		// AVCodec avCodec = avcodec.avcodec_find_decoder_by_name("libopenh264");
-		// AVCodec avCodec = avcodec.avcodec_find_decoder_by_name("h264_cuvid");
-		// AVCodec avCodec = avcodec.avcodec_find_decoder_by_name("h264_qsv");
 
 		if (TODO_DEBUG) {
 			System.out.println("FFH264NalUnitDecoder, avCodec.name: " + avCodec.name().getString());
@@ -113,24 +124,23 @@ public class FFH264NalUnitDecoder {
 
 		video_c = avcodec.avcodec_alloc_context3(avCodec);
 
-		if (TODO_TEST_HW_DEVICE_CONTEXT) {
-
+		if (videoConfiguration == VideoConfiguration.FF_H264_HWDEVICE_CUDA) {
 			hardwareContext = FFmpegUtils.createHWDeviceContextInfo(avCodec, avutil.AV_HWDEVICE_TYPE_CUDA);
-			// hardwareContext = FFmpegUtils.createHWDeviceContextInfo(avCodec, avutil.AV_HWDEVICE_TYPE_DXVA2);
-			// hardwareContext = FFmpegUtils.createHWDeviceContextInfo(avCodec, avutil.AV_HWDEVICE_TYPE_D3D11VA);
-			// hardwareContext = FFmpegUtils.createHWDeviceContextInfo(avCodec, avutil.AV_HWDEVICE_TYPE_VIDEOTOOLBOX);
+		} else if (videoConfiguration == VideoConfiguration.FF_H264_HWDEVICE_DXVA2) {
+			hardwareContext = FFmpegUtils.createHWDeviceContextInfo(avCodec, avutil.AV_HWDEVICE_TYPE_DXVA2);
+		} else if (videoConfiguration == VideoConfiguration.FF_H264_HWDEVICE_D3D11VA) {
+			hardwareContext = FFmpegUtils.createHWDeviceContextInfo(avCodec, avutil.AV_HWDEVICE_TYPE_D3D11VA);
+		} else if (videoConfiguration == VideoConfiguration.FF_H264_HWDEVICE_VIDEOTOOLBOX) {
+			hardwareContext = FFmpegUtils.createHWDeviceContextInfo(avCodec, avutil.AV_HWDEVICE_TYPE_VIDEOTOOLBOX);
+		}
 
-			if (hardwareContext != null) {
-				video_c.hw_device_ctx(hardwareContext.getHWDeviceContext());
-			}
+		if (hardwareContext != null) {
 
 			if (TODO_DEBUG) {
-				if (hardwareContext != null) {
-					System.out.println("FFH264NalUnitDecoder, hardware device context successfully created");
-				} else {
-					System.err.println("FFH264NalUnitDecoder, hardware device context could not be created..");
-				}
+				System.out.println("FFH264NalUnitDecoder, hardware device context successfully created");
 			}
+
+			video_c.hw_device_ctx(hardwareContext.getHWDeviceContext());
 
 			video_c.flags(video_c.flags() | avcodec.AV_CODEC_FLAG_LOW_DELAY);
 			video_c.flags(video_c.flags() | avcodec.AV_CODEC_FLAG_OUTPUT_CORRUPT);
@@ -138,6 +148,7 @@ public class FFH264NalUnitDecoder {
 
 			// video_c.err_recognition(video_c.err_recognition() | AVCodecContext.AV_EF_EXPLODE);
 
+			// TODO?
 			video_c.thread_count(2);
 
 			video_c.width(imageWidth);
