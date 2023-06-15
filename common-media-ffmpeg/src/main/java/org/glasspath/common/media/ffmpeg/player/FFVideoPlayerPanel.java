@@ -46,13 +46,13 @@ import org.glasspath.common.media.video.FrameBuffer;
 import org.glasspath.common.media.video.FrameBuffer.BufferedFrame;
 import org.glasspath.common.media.video.FrameLoaderCallback;
 import org.glasspath.common.media.video.Video;
+import org.glasspath.common.media.video.VideoConfiguration;
 
 import com.jhlabs.image.ContrastFilter;
 
 public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 	public static boolean TODO_DEBUG = false;
-	public static boolean TODO_TEST_HW_DECODER = false;
 	public static int TODO_PRE_PROCESSOR_COUNT = 0;
 	public static int TODO_POST_PROCESSOR_COUNT = 0;
 
@@ -64,6 +64,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	public static final int MAX_DECODE_FAILED_COUNT = 5;
 	public static final int END_OF_VIDEO_REACHED_MARGIN = 30 * 33333;
 
+	private final VideoConfiguration videoConfiguration;
 	private final FFBufferedFrame[] buffer;
 	private FFFrameBuffer frameBuffer = null;
 	private long duration = 0L;
@@ -73,7 +74,13 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	private int decodeFailedCount = 0;
 
 	public FFVideoPlayerPanel(IVideoPlayer context, Video video) {
+		this(context, video, VideoConfiguration.FF_H264);
+	}
+
+	public FFVideoPlayerPanel(IVideoPlayer context, Video video, VideoConfiguration videoConfiguration) {
 		super(context);
+
+		this.videoConfiguration = videoConfiguration;
 
 		buffer = new FFBufferedFrame[FRAME_BUFFER_SIZE];
 		for (int i = 0; i < buffer.length; i++) {
@@ -400,9 +407,10 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		protected boolean createDecoder(int thread) {
 
 			frameGrabber = new FFmpegFrameGrabber(video.getPath());
-			if (TODO_TEST_HW_DECODER) {
+			if (videoConfiguration == VideoConfiguration.FF_H264_CUVID) {
+				frameGrabber.setVideoCodecName("h264_cuvid");
+			} else if (videoConfiguration == VideoConfiguration.FF_H264_QSV) {
 				frameGrabber.setVideoCodecName("h264_qsv");
-				// frameGrabber.setVideoCodecName("h264_cuvid");
 			}
 
 			// frameGrabber.setImageMode(ImageMode.RAW);
