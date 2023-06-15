@@ -46,7 +46,6 @@ import org.glasspath.common.media.video.VideoConfiguration;
 public class FFH264NalUnitDecoder {
 
 	public static boolean TODO_DEBUG = false;
-	public static boolean TODO_TEST_HW_DEVICE_CONTEXT = false;
 
 	static {
 		FFmpegUtils.initLogLevel();
@@ -400,7 +399,7 @@ public class FFH264NalUnitDecoder {
 		int result = avcodec.avcodec_send_packet(video_c, pkt);
 		if (result == 0) {
 
-			if (TODO_TEST_HW_DEVICE_CONTEXT) {
+			if (hardwareContext != null) {
 
 				AVFrame hwAvFrame = avutil.av_frame_alloc();
 
@@ -460,7 +459,7 @@ public class FFH264NalUnitDecoder {
 		}
 
 		// Convert the image into BGR or GRAY format that OpenCV uses
-		if (TODO_TEST_HW_DEVICE_CONTEXT) {
+		if (hardwareContext != null) {
 
 			img_convert_ctx = swscale.sws_getCachedContext(img_convert_ctx,
 					video_c.width(), video_c.height(), avutil.AV_PIX_FMT_NV12, // TODO: How to check which pixel format we need here?
