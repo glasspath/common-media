@@ -302,6 +302,12 @@ public abstract class FrameBuffer<F> {
 
 								next();
 
+							} else if (buffer[i].state < 0) {
+
+								buffer[i].source = null;
+
+								next();
+
 							} else {
 								Thread.sleep(0, 100); // TODO?
 							}
@@ -355,6 +361,12 @@ public abstract class FrameBuffer<F> {
 
 								next();
 
+							} else if (buffer[i].state < 0) {
+
+								buffer[i].source = null;
+
+								next();
+
 							} else {
 								Thread.sleep(0, 100); // TODO?
 							}
@@ -398,6 +410,12 @@ public abstract class FrameBuffer<F> {
 
 								postProcess(workerIndex, buffer[i].getImage());
 								buffer[i].state = BufferedFrame.READY;
+
+								next();
+
+							} else if (buffer[i].state < 0) {
+
+								buffer[i].source = null;
 
 								next();
 
