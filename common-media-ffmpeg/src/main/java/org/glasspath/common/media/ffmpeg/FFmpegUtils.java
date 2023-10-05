@@ -22,6 +22,14 @@
  */
 package org.glasspath.common.media.ffmpeg;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
 import org.bytedeco.ffmpeg.avcodec.AVCodecHWConfig;
 import org.bytedeco.ffmpeg.avutil.AVBufferRef;
@@ -32,6 +40,7 @@ import org.bytedeco.javacpp.Loader;
 public class FFmpegUtils {
 
 	public static boolean TODO_DEBUG = false;
+	public static final String TRANSCODE_PRESET_PREFIX = "transcode-preset:";
 
 	static {
 		initLogLevel();
@@ -54,7 +63,105 @@ public class FFmpegUtils {
 		try {
 
 			String ffmpeg = Loader.load(org.bytedeco.ffmpeg.ffmpeg.class);
-			ProcessBuilder pb = new ProcessBuilder(ffmpeg, "-codecs");
+
+			List<String> commands = new ArrayList<>();
+			commands.add(ffmpeg);
+			commands.add("-codecs");
+
+			ProcessBuilder pb = new ProcessBuilder(commands);
+			pb.inheritIO().start().waitFor();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public static void printFileInfo(File inputFile) {
+
+		try {
+
+			String ffmpeg = Loader.load(org.bytedeco.ffmpeg.ffmpeg.class);
+
+			List<String> commands = new ArrayList<>();
+			commands.add(ffmpeg);
+			commands.add("-i");
+			commands.add(inputFile.getAbsolutePath());
+
+			ProcessBuilder pb = new ProcessBuilder(commands);
+			pb.inheritIO().start().waitFor();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public static Map<String, List<String>> loadPresets(File presetsFile) {
+
+		Map<String, List<String>> presets = new HashMap<>();
+
+		try (BufferedReader bufferedReader = new BufferedReader(new FileReader(presetsFile))) {
+
+			String presetName = null;
+			List<String> args = null;
+
+			String line;
+			while ((line = bufferedReader.readLine()) != null) {
+
+				if (line.toLowerCase().startsWith(TRANSCODE_PRESET_PREFIX)) {
+
+					if (presetName != null && presetName.length() > 0 && args != null) {
+						presets.put(presetName, args);
+					}
+
+					presetName = line.substring(TRANSCODE_PRESET_PREFIX.length()).trim();
+					args = new ArrayList<>();
+
+				} else if (presetName != null && presetName.length() > 0 && args != null) {
+
+					String arg = line.trim();
+					if (arg.length() > 0) {
+						args.add(arg);
+					}
+
+				}
+
+			}
+
+			if (presetName != null && presetName.length() > 0 && args != null) {
+				presets.put(presetName, args);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return presets;
+
+	}
+
+	public static void transcode(File inputFile, File outputFile) {
+		transcode(inputFile, null, outputFile);
+	}
+
+	public static void transcode(File inputFile, List<String> args, File outputFile) {
+
+		try {
+
+			String ffmpeg = Loader.load(org.bytedeco.ffmpeg.ffmpeg.class);
+
+			List<String> commands = new ArrayList<>();
+			commands.add(ffmpeg);
+			commands.add("-y"); // Overwrite (yes)
+			commands.add("-i");
+			commands.add(inputFile.getAbsolutePath());
+			if (args != null) {
+				commands.addAll(args);
+			}
+			commands.add(outputFile.getAbsolutePath());
+
+			ProcessBuilder pb = new ProcessBuilder(commands);
 			pb.inheritIO().start().waitFor();
 
 		} catch (Exception e) {
