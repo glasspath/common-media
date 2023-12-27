@@ -160,7 +160,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 			frame.getRootPane().setBackground(ControlsBar.CONTROLS_BAR_BG_COLOR);
 		}
 
-		FrameUtils.loadFrameDimensions(frame, preferences, false);
+		FrameUtils.loadFrameDimensions(frame, preferences);
 
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(fileTools.getMenu());
@@ -240,6 +240,11 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	@Override
 	public JFrame getFrame() {
 		return frame;
+	}
+
+	@Override
+	public boolean isContentChanged() {
+		return false;
 	}
 
 	@Override
