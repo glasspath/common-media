@@ -48,7 +48,7 @@ public class FFH264NalUnitDecoder {
 	public static boolean TODO_DEBUG = false;
 
 	static {
-		FFmpegUtils.initLogLevel();
+		FFmpegUtils.setup();
 	}
 
 	static {
@@ -338,7 +338,7 @@ public class FFH264NalUnitDecoder {
 
 		// work around bug in swscale: https://trac.ffmpeg.org/ticket/1031
 		int align = 32;
-		int stride = width;
+		int stride = width;/* TODO
 		for (int i = 1; i <= align; i += i) {
 			stride = (width + (i - 1)) & ~(i - 1);
 			avutil.av_image_fill_linesizes(picture_rgb.linesize(), fmt, stride);
@@ -346,6 +346,7 @@ public class FFH264NalUnitDecoder {
 				break;
 			}
 		}
+		*/
 
 		// Determine required buffer size and allocate buffer
 		int size = avutil.av_image_get_buffer_size(fmt, stride, height, 1);

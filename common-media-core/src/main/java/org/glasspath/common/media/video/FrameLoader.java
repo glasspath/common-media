@@ -31,10 +31,10 @@ public abstract class FrameLoader {
 	}
 
 	public void installOnVideo(DefaultVideo video) {
-		installOnVideo(video, true);
+		installOnVideo(video, 0, 0, true);
 	}
 
-	public void installOnVideo(DefaultVideo video, boolean closeFile) {
+	public void installOnVideo(DefaultVideo video, int width, int height, boolean closeFile) {
 		this.video = video;
 	}
 

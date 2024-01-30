@@ -38,7 +38,7 @@ public class FFFrameLoader extends FrameLoader {
 	public static boolean TODO_DEBUG = false;
 
 	static {
-		FFmpegUtils.initLogLevel();
+		FFmpegUtils.setup();
 	}
 
 	private final FFVideoFrameConverter frameConverter;
@@ -46,7 +46,7 @@ public class FFFrameLoader extends FrameLoader {
 	private boolean fileOpen = false;
 
 	public FFFrameLoader() {
-		this(false); // TODO? (we are setting width/height on frame grabber, this causes optimized converter to fail..)
+		this(true); // TODO? (we are setting width/height on frame grabber, this causes optimized converter to fail..)
 	}
 
 	public FFFrameLoader(boolean optimizedConverter) {
@@ -54,10 +54,15 @@ public class FFFrameLoader extends FrameLoader {
 	}
 
 	@Override
-	public void installOnVideo(DefaultVideo video, boolean closeFile) {
-		super.installOnVideo(video, closeFile);
+	public void installOnVideo(DefaultVideo video, int width, int height, boolean closeFile) {
+		super.installOnVideo(video, width, height, closeFile);
 
 		frameGrabber = new FFmpegFrameGrabber(video.getPath());
+
+		if (width > 0 && height > 0) {
+			frameGrabber.setImageWidth(width);
+			frameGrabber.setImageHeight(height);
+		}
 
 		// TODO
 		int cores = Runtime.getRuntime().availableProcessors(); // Includes hyper threading cores

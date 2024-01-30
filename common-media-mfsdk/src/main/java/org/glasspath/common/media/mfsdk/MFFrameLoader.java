@@ -71,8 +71,8 @@ public class MFFrameLoader extends FrameLoader {
 	}
 
 	@Override
-	public void installOnVideo(DefaultVideo video, boolean closeFile) {
-		super.installOnVideo(video, closeFile);
+	public void installOnVideo(DefaultVideo video, int width, int height, boolean closeFile) {
+		super.installOnVideo(video, width, height, closeFile);
 
 		if (!video.isPathValid()) {
 			sourceType = MFUtils.MFSDK_SOURCE_TYPE_DUMMY;

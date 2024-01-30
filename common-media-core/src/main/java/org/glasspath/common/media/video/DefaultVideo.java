@@ -59,7 +59,7 @@ public class DefaultVideo extends Video {
 		this.height = height;
 
 		if (frameLoader != null) {
-			frameLoader.installOnVideo(this, closeFile);
+			frameLoader.installOnVideo(this, width, height, closeFile);
 		}
 
 	}

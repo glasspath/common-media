@@ -57,7 +57,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	public static int TODO_POST_PROCESSOR_COUNT = 0;
 
 	static {
-		FFmpegUtils.initLogLevel();
+		FFmpegUtils.setup();
 	}
 
 	public static final int FRAME_BUFFER_SIZE = 10;

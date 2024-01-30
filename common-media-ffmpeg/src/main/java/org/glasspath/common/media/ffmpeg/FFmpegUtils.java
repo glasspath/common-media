@@ -42,20 +42,27 @@ public class FFmpegUtils {
 	public static boolean TODO_DEBUG = false;
 	public static final String TRANSCODE_PRESET_PREFIX = "transcode-preset:";
 
-	static {
-		initLogLevel();
-	}
-
 	private FFmpegUtils() {
 
 	}
 
-	public static void initLogLevel() {
+	public static void setup() {
+
+		System.out.println("FFmpegUtils setup");
+
+		if (TODO_DEBUG) {
+			System.setProperty("org.bytedeco.javacpp.logger.debug", "true");
+		}
+
+		// Call first to make sure javacpp library loading mechanism works ok..
+		Loader.load(Loader.class);
+
 		if (TODO_DEBUG) {
 			org.bytedeco.ffmpeg.global.avutil.av_log_set_level(avutil.AV_LOG_DEBUG);
 		} else {
 			org.bytedeco.ffmpeg.global.avutil.av_log_set_level(avutil.AV_LOG_ERROR);
-		}
+		}		
+
 	}
 
 	public static void listCodecs() {
