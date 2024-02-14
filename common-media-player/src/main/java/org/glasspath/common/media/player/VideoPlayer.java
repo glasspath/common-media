@@ -243,6 +243,11 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	}
 
 	@Override
+	public Preferences getPreferences() {
+		return preferences;
+	}
+
+	@Override
 	public boolean isContentChanged() {
 		return false;
 	}
@@ -260,11 +265,6 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	@Override
 	public ControlsBar getControlsBar() {
 		return controlsBar;
-	}
-
-	@Override
-	public Preferences getPreferences() {
-		return preferences;
 	}
 
 	@Override

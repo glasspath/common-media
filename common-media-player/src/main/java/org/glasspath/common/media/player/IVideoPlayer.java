@@ -22,8 +22,6 @@
  */
 package org.glasspath.common.media.player;
 
-import java.util.prefs.Preferences;
-
 import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
 import org.glasspath.common.media.video.Video;
@@ -36,8 +34,6 @@ public interface IVideoPlayer extends FrameContext {
 	public IVideoPlayerPanel getVideoPlayerPanel();
 
 	public ControlsBar getControlsBar();
-
-	public Preferences getPreferences();
 
 	public void setOverlay(IOverlay overlay);
 
