@@ -59,6 +59,10 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 	private volatile boolean selected = false;
 
 	public FFVideoPreviewPanel(IVideoPlayerListener previewPanelListener, Resolution resolution) {
+		this(previewPanelListener, resolution, DEFAULT_SKIP_FRAMES);
+	}
+
+	public FFVideoPreviewPanel(IVideoPlayerListener previewPanelListener, Resolution resolution, int skipFrames) {
 
 		streamListener = new RtspStreamListener() {
 
@@ -165,7 +169,7 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 				previewPanelListener.statisticsUpdated(statistics);
 			}
 		};
-		decoderThread.setSkipFrames(DEFAULT_SKIP_FRAMES);
+		decoderThread.setSkipFrames(skipFrames);
 
 		setFrame(previewFrame);
 

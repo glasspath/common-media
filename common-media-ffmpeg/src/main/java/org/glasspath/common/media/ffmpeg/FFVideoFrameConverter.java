@@ -52,15 +52,21 @@ public class FFVideoFrameConverter {
 	}
 
 	public BufferedImage createBufferedImage(Frame frame) {
+		return createBufferedImage(frame, null);
+	}
+
+	public BufferedImage createBufferedImage(Frame frame, BufferedImage image) {
 
 		if (optimized) {
 
 			try {
 
-				ByteBuffer buffer = (ByteBuffer) frame.image[0].position(0);
-
-				BufferedImage image = new BufferedImage(frame.imageWidth, frame.imageHeight, Java2DFrameConverter.getBufferedImageType(frame));
+				if (image == null) {
+					image = new BufferedImage(frame.imageWidth, frame.imageHeight, Java2DFrameConverter.getBufferedImageType(frame));
+				}
+				
 				byte[] bufferPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
+				ByteBuffer buffer = (ByteBuffer) frame.image[0].position(0);
 
 				if (bufferPixels.length == buffer.limit()) {
 					buffer.get(bufferPixels);
@@ -84,7 +90,7 @@ public class FFVideoFrameConverter {
 			// TODO? Java2DFrameConverter cannot be used for creating a list of images,
 			// it always returns the same BufferedImage instance but with new image data..
 			Java2DFrameConverter converter = new Java2DFrameConverter();
-			BufferedImage image = converter.convert(frame);
+			image = converter.convert(frame);
 			converter.close();
 
 			return image;

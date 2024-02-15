@@ -60,7 +60,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		FFmpegUtils.setup();
 	}
 
-	public static final int FRAME_BUFFER_SIZE = 10;
+	public static final int DEFAULT_FRAME_BUFFER_SIZE = 10;
 	public static final int MAX_DECODE_FAILED_COUNT = 5;
 	public static final int END_OF_VIDEO_REACHED_MARGIN = 30 * 33333;
 
@@ -74,15 +74,19 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 	private int decodeFailedCount = 0;
 
 	public FFVideoPlayerPanel(IVideoPlayer context, Video video) {
-		this(context, video, VideoConfiguration.FF_H264);
+		this(context, video, VideoConfiguration.FF_H264, DEFAULT_FRAME_BUFFER_SIZE);
 	}
 
 	public FFVideoPlayerPanel(IVideoPlayer context, Video video, VideoConfiguration videoConfiguration) {
+		this(context, video, videoConfiguration, DEFAULT_FRAME_BUFFER_SIZE);
+	}
+
+	public FFVideoPlayerPanel(IVideoPlayer context, Video video, VideoConfiguration videoConfiguration, int frameBufferSize) {
 		super(context);
 
 		this.videoConfiguration = videoConfiguration;
 
-		buffer = new FFBufferedFrame[FRAME_BUFFER_SIZE];
+		buffer = new FFBufferedFrame[frameBufferSize];
 		for (int i = 0; i < buffer.length; i++) {
 			buffer[i] = new FFBufferedFrame();
 		}
@@ -133,6 +137,8 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 				}
 
+				// System.out.println("FrameBuffer exited");
+
 			}
 
 			frameBuffer = null;
@@ -140,7 +146,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		}
 
 		for (int i = 0; i < buffer.length; i++) {
-			buffer[i].reset();
+			buffer[i].close();
 		}
 
 		duration = 0L;
@@ -501,16 +507,34 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		}
 
 		@Override
-		protected org.bytedeco.javacv.Frame decode(int thread) {
+		protected org.bytedeco.javacv.Frame decode(int thread, org.bytedeco.javacv.Frame f) {
+
 			try {
+
 				org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
 				if (frame != null && frame.image != null) {
-					return frame.clone(); // FFmpegFrameGrabber returns same instance each time, so for buffering we need to clone
+
+					if (buffer.length > 1) {
+
+						if (f != null) {
+							FFmpegUtils.copyFrame(frame, f);
+							return f;
+						} else {
+							return frame.clone(); // FFmpegFrameGrabber returns same instance each time, so for buffering we need to clone
+						}
+
+					} else {
+						return frame;
+					}
+
 				}
+
 			} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e) {
 				e.printStackTrace();
 			}
+
 			return null;
+
 		}
 
 		@Override
@@ -607,8 +631,8 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		}
 
 		@Override
-		protected BufferedImage convert(int thread, org.bytedeco.javacv.Frame source) {
-			return frameConverter.createBufferedImage(source);
+		protected BufferedImage convert(int thread, org.bytedeco.javacv.Frame source, BufferedImage image) {
+			return frameConverter.createBufferedImage(source, image);
 		}
 
 		@Override
@@ -645,10 +669,22 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		public void reset() {
 
 			if (source != null) {
-				source.close();
+				if (!FrameBuffer.TODO_TEST_RECYCLE_MODE) {
+					source.close();
+				}
 			}
 
 			super.reset();
+
+		}
+
+		public void close() {
+
+			if (source != null) {
+				// System.out.println("Closing frame");
+				source.close();
+				source = null;
+			}
 
 		}
 

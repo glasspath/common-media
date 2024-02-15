@@ -28,6 +28,8 @@ import java.util.List;
 
 public abstract class FrameBuffer<F> {
 
+	public static boolean TODO_TEST_RECYCLE_MODE = true;
+
 	private final int preProcessorThreads;
 	private final int postProcessorThreads;
 	private BufferedFrame<F>[] buffer;
@@ -161,11 +163,11 @@ public abstract class FrameBuffer<F> {
 
 	protected abstract boolean createDecoder(int thread);
 
-	protected abstract long getDecoderTimestamp(int thread, F source);
+	protected abstract long getDecoderTimestamp(int thread, F frame);
 
 	protected abstract void setDecoderTimestamp(int thread, long timestamp);
 
-	protected abstract F decode(int thread);
+	protected abstract F decode(int thread, F frame);
 
 	protected abstract boolean isEndOfVideoReached(int thread);
 
@@ -181,7 +183,7 @@ public abstract class FrameBuffer<F> {
 
 	protected abstract boolean createConverter(int thread);
 
-	protected abstract BufferedImage convert(int thread, F source);
+	protected abstract BufferedImage convert(int thread, F frame, BufferedImage image);
 
 	protected abstract void closeConverter(int thread);
 
@@ -221,16 +223,16 @@ public abstract class FrameBuffer<F> {
 									seekTimestamp = null;
 								}
 
-								buffer[i].source = decode(workerIndex);
+								buffer[i].source = decode(workerIndex, buffer[i].source);
 
-								if (buffer[i].source == null) {
+								if (buffer[i].source == null || TODO_TEST_RECYCLE_MODE) {
 
 									if (isEndOfVideoReached(workerIndex)) {
 
 										setDecoderTimestamp(workerIndex, 0);
 
 										if (isRepeatEnabled(workerIndex)) {
-											buffer[i].source = decode(workerIndex);
+											buffer[i].source = decode(workerIndex, buffer[i].source);
 										} else {
 											buffer[i].state = BufferedFrame.END_OF_VIDEO_REACHED;
 										}
@@ -304,7 +306,9 @@ public abstract class FrameBuffer<F> {
 
 							} else if (buffer[i].state < 0) {
 
-								buffer[i].source = null;
+								if (!TODO_TEST_RECYCLE_MODE) {
+									buffer[i].source = null;
+								}
 
 								next();
 
@@ -349,10 +353,13 @@ public abstract class FrameBuffer<F> {
 
 							if (buffer[i].state == BufferedFrame.PRE_PROCESSED) {
 
-								buffer[i].setImage(convert(workerIndex, buffer[i].source));
+								buffer[i].setImage(convert(workerIndex, buffer[i].source, buffer[i].getImage()));
 								buffer[i].getImage().setAccelerationPriority(1.0F);
 
-								buffer[i].source = null;
+								if (!TODO_TEST_RECYCLE_MODE) {
+									buffer[i].source = null;
+								}
+
 								if (postProcessorThreads > 0) {
 									buffer[i].state = BufferedFrame.CONVERTED;
 								} else {
@@ -363,7 +370,9 @@ public abstract class FrameBuffer<F> {
 
 							} else if (buffer[i].state < 0) {
 
-								buffer[i].source = null;
+								if (!TODO_TEST_RECYCLE_MODE) {
+									buffer[i].source = null;
+								}
 
 								next();
 
@@ -415,7 +424,9 @@ public abstract class FrameBuffer<F> {
 
 							} else if (buffer[i].state < 0) {
 
-								buffer[i].source = null;
+								if (!TODO_TEST_RECYCLE_MODE) {
+									buffer[i].source = null;
+								}
 
 								next();
 
@@ -507,8 +518,10 @@ public abstract class FrameBuffer<F> {
 		}
 
 		public void reset() {
-			source = null;
-			setImage(null);
+			if (!TODO_TEST_RECYCLE_MODE) {
+				source = null;
+				setImage(null);
+			}
 			setTimestamp(0);
 			state = CLEARED;
 		}

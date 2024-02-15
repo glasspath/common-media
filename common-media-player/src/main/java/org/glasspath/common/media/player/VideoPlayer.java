@@ -492,6 +492,7 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 		FrameUtils.saveFrameDimensions(frame, preferences);
 
 		if (videoPlayerPanel != null) {
+			videoPlayerPanel.close();
 			videoPlayerPanel.exit();
 		}
 

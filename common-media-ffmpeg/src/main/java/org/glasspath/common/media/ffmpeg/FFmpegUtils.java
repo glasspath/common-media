@@ -36,6 +36,7 @@ import org.bytedeco.ffmpeg.avutil.AVBufferRef;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacpp.Loader;
+import org.bytedeco.javacv.Frame;
 
 public class FFmpegUtils {
 
@@ -61,7 +62,7 @@ public class FFmpegUtils {
 			org.bytedeco.ffmpeg.global.avutil.av_log_set_level(avutil.AV_LOG_DEBUG);
 		} else {
 			org.bytedeco.ffmpeg.global.avutil.av_log_set_level(avutil.AV_LOG_ERROR);
-		}		
+		}
 
 	}
 
@@ -215,6 +216,35 @@ public class FFmpegUtils {
 		}
 
 		return hwDeviceContextInfo;
+
+	}
+
+	public static void copyFrame(Frame from, Frame to) {
+
+		if (from.image != null && to.image != null && from.image.length == to.image.length) {
+
+			/*
+			to.imageWidth = from.imageWidth;
+			to.imageHeight = from.imageHeight;
+			to.imageDepth = from.imageDepth;
+			to.imageChannels = from.imageChannels;
+			to.imageStride = from.imageStride;
+			to.keyFrame = from.keyFrame;
+			to.pictType = from.pictType;
+			to.streamIndex = from.streamIndex;
+			to.type = from.type;
+			to.opaque = new Pointer[3];
+			*/
+
+			to.keyFrame = from.keyFrame;
+			to.streamIndex = from.streamIndex;
+			to.timestamp = from.timestamp;
+
+			for (int i = 0; i < from.image.length; i++) {
+				to.image[i] = from.image[i];
+			}
+
+		}
 
 	}
 
