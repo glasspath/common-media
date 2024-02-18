@@ -60,7 +60,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		FFmpegUtils.setup();
 	}
 
-	public static final int DEFAULT_FRAME_BUFFER_SIZE = 10;
+	public static final int DEFAULT_FRAME_BUFFER_SIZE = 3;
 	public static final int MAX_DECODE_FAILED_COUNT = 5;
 	public static final int END_OF_VIDEO_REACHED_MARGIN = 30 * 33333;
 

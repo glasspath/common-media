@@ -61,15 +61,24 @@ public class FFVideoFrameConverter {
 
 			try {
 
+				/* TODO: For now we always create a new BufferedImage, using the same instance causes painting artifacts,
+				 * perhaps this has to do with hardware acceleration, forcing a repaint (by resizing the video player)
+				 * causes the BufferedImage to be painted correctly, it looks like the new raster data is not yet fully
+				 * updated when painting for the first time..
 				if (image == null) {
 					image = new BufferedImage(frame.imageWidth, frame.imageHeight, Java2DFrameConverter.getBufferedImageType(frame));
+				} else {
+					// image.flush();
 				}
-				
+				*/
+				image = new BufferedImage(frame.imageWidth, frame.imageHeight, Java2DFrameConverter.getBufferedImageType(frame));
+
 				byte[] bufferPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
 				ByteBuffer buffer = (ByteBuffer) frame.image[0].position(0);
 
 				if (bufferPixels.length == buffer.limit()) {
 					buffer.get(bufferPixels);
+					// Java2DFrameConverter.copy(frame, image, 1.0, false, null);
 					return image;
 				} else {
 					if (TODO_DEBUG) {
