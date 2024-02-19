@@ -55,30 +55,61 @@ public class FFVideoFrameConverter {
 		return createBufferedImage(frame, null);
 	}
 
+	/*
+	public VolatileImage createVolatileImage(Frame frame, VolatileImage image) {
+		
+		try {
+	
+			if (image == null) {
+				
+				GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		        GraphicsDevice gd = ge.getDefaultScreenDevice();
+		        GraphicsConfiguration gc = gd.getDefaultConfiguration();
+		        image = gc.createCompatibleVolatileImage(frame.imageWidth, frame.imageHeight);
+	
+			} else {
+				// image.flush();
+			}
+	
+			byte[] bufferPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
+			ByteBuffer buffer = (ByteBuffer) frame.image[0].position(0);
+	
+			if (bufferPixels.length == buffer.limit()) {
+				buffer.get(bufferPixels);
+				// Java2DFrameConverter.copy(frame, image, 1.0, false, null);
+				return image;
+			} else {
+				if (TODO_DEBUG) {
+					System.err.println("VideoFrameConverter (optimized), buffer lengths don't match.. (" + bufferPixels.length + " != " + buffer.limit() + ")");
+				}
+				return null;
+			}
+	
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		
+	}
+	*/
+
 	public BufferedImage createBufferedImage(Frame frame, BufferedImage image) {
 
 		if (optimized) {
 
 			try {
 
-				/* TODO: For now we always create a new BufferedImage, using the same instance causes painting artifacts,
-				 * perhaps this has to do with hardware acceleration, forcing a repaint (by resizing the video player)
-				 * causes the BufferedImage to be painted correctly, it looks like the new raster data is not yet fully
-				 * updated when painting for the first time..
 				if (image == null) {
 					image = new BufferedImage(frame.imageWidth, frame.imageHeight, Java2DFrameConverter.getBufferedImageType(frame));
 				} else {
 					// image.flush();
 				}
-				*/
-				image = new BufferedImage(frame.imageWidth, frame.imageHeight, Java2DFrameConverter.getBufferedImageType(frame));
 
 				byte[] bufferPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
 				ByteBuffer buffer = (ByteBuffer) frame.image[0].position(0);
 
 				if (bufferPixels.length == buffer.limit()) {
 					buffer.get(bufferPixels);
-					// Java2DFrameConverter.copy(frame, image, 1.0, false, null);
 					return image;
 				} else {
 					if (TODO_DEBUG) {

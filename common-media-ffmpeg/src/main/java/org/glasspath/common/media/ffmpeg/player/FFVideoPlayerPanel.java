@@ -54,6 +54,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 	public static boolean TODO_DEBUG = false;
 	public static int TODO_PRE_PROCESSOR_COUNT = 0;
+	public static int TODO_CONVERTED_COUNT = 0; // TODO: For now we do decoding and converting in one go to reduce memory usage
 	public static int TODO_POST_PROCESSOR_COUNT = 0;
 
 	static {
@@ -66,6 +67,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 	private final VideoConfiguration videoConfiguration;
 	private final FFBufferedFrame[] buffer;
+	private final Frame frame;
 	private FFFrameBuffer frameBuffer = null;
 	private long duration = 0L;
 	private double frameRate = 0.0;
@@ -90,6 +92,8 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		for (int i = 0; i < buffer.length; i++) {
 			buffer[i] = new FFBufferedFrame();
 		}
+
+		frame = new Frame();
 
 		if (video != null) {
 
@@ -162,11 +166,12 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 		if (buffer[bufferIndex].isImageReady()) {
 
-			Frame frame = new Frame();
+			BufferedImage swapImage = frame.getImage();
+			
 			frame.setTimestamp(buffer[bufferIndex].getTimestamp());
 			frame.setImage(buffer[bufferIndex].getImage());
 
-			buffer[bufferIndex].reset();
+			buffer[bufferIndex].reset(swapImage);
 
 			bufferIndex++;
 			if (bufferIndex >= buffer.length) {
@@ -211,7 +216,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 			}
 
-			buffer[bufferIndex].reset();
+			buffer[bufferIndex].reset(buffer[bufferIndex].getImage());
 
 			bufferIndex++;
 			if (bufferIndex >= buffer.length) {
@@ -387,7 +392,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		private int frameGrabberState = 0;
 
 		private FFFrameBuffer(Video video) {
-			super(1, TODO_PRE_PROCESSOR_COUNT, 1, TODO_POST_PROCESSOR_COUNT);
+			super(1, TODO_PRE_PROCESSOR_COUNT, 0, TODO_POST_PROCESSOR_COUNT);
 
 			this.video = video;
 			this.frameConverter = new FFVideoFrameConverter();
@@ -514,13 +519,16 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 				org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
 				if (frame != null && frame.image != null) {
 
-					if (buffer.length > 1) {
+					if (getConverterThreads() == 0) {
+						return frame;
+					} else if (buffer.length > 1) {
 
+						// FFmpegFrameGrabber returns same instance each time, so for buffering we need to copy/clone
 						if (f != null) {
 							FFmpegUtils.copyFrame(frame, f);
 							return f;
 						} else {
-							return frame.clone(); // FFmpegFrameGrabber returns same instance each time, so for buffering we need to clone
+							return frame.clone();
 						}
 
 					} else {
@@ -666,7 +674,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		}
 
 		@Override
-		public void reset() {
+		public void reset(BufferedImage swapImage) {
 
 			if (source != null) {
 				if (!FrameBuffer.TODO_TEST_RECYCLE_MODE) {
@@ -674,7 +682,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 				}
 			}
 
-			super.reset();
+			super.reset(swapImage);
 
 		}
 

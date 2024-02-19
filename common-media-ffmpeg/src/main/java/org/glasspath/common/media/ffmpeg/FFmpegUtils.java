@@ -25,6 +25,13 @@ package org.glasspath.common.media.ffmpeg;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +42,14 @@ import org.bytedeco.ffmpeg.avcodec.AVCodecHWConfig;
 import org.bytedeco.ffmpeg.avutil.AVBufferRef;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
+import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.javacpp.DoublePointer;
+import org.bytedeco.javacpp.FloatPointer;
+import org.bytedeco.javacpp.IntPointer;
 import org.bytedeco.javacpp.Loader;
+import org.bytedeco.javacpp.LongPointer;
+import org.bytedeco.javacpp.Pointer;
+import org.bytedeco.javacpp.ShortPointer;
 import org.bytedeco.javacv.Frame;
 
 public class FFmpegUtils {
@@ -240,12 +254,108 @@ public class FFmpegUtils {
 			to.streamIndex = from.streamIndex;
 			to.timestamp = from.timestamp;
 
+			/*
 			for (int i = 0; i < from.image.length; i++) {
 				to.image[i] = from.image[i];
 			}
+			*/
+			((Pointer[]) to.opaque)[0] = cloneBufferArray(from.image, to.image);
 
 		}
 
+	}
+
+	// Copied from org.bytedeco.javacv.Frame.java
+	@SuppressWarnings("resource")
+	private static Pointer cloneBufferArray(Buffer[] srcBuffers, Buffer[] clonedBuffers) {
+		Pointer opaque = null;
+
+		if (srcBuffers != null && srcBuffers.length > 0) {
+			int totalCapacity = 0;
+			for (int i = 0; i < srcBuffers.length; i++) {
+				srcBuffers[i].rewind();
+				totalCapacity += srcBuffers[i].capacity();
+			}
+
+			/*
+			 * In order to optimize the transfer we need a type check.
+			 *
+			 * Most CPUs support hardware memory transfer for different data
+			 * types, so it's faster to copy more bytes at once rather
+			 * than one byte per iteration as in case of ByteBuffer.
+			 *
+			 * For example, Intel CPUs support MOVSB (byte transfer), MOVSW
+			 * (word transfer), MOVSD (double word transfer), MOVSS (32 bit
+			 * scalar single precision floating point), MOVSQ (quad word
+			 * transfer) and so on...
+			 *
+			 * Type checking may be improved by changing the order in
+			 * which a buffer is checked against. If it's likely that the
+			 * expected buffer is of type "ShortBuffer", then it should be
+			 * checked at first place.
+			 *
+			 */
+
+			if (srcBuffers[0] instanceof ByteBuffer) {
+				BytePointer pointer = new BytePointer(totalCapacity);
+				for (int i = 0; i < srcBuffers.length; i++) {
+					clonedBuffers[i] = pointer.limit(pointer.position() + srcBuffers[i].limit())
+							.asBuffer().put((ByteBuffer) srcBuffers[i]);
+					pointer.position(pointer.limit());
+				}
+				opaque = pointer;
+			} else if (srcBuffers[0] instanceof ShortBuffer) {
+				ShortPointer pointer = new ShortPointer(totalCapacity);
+				for (int i = 0; i < srcBuffers.length; i++) {
+					clonedBuffers[i] = pointer.limit(pointer.position() + srcBuffers[i].limit())
+							.asBuffer().put((ShortBuffer) srcBuffers[i]);
+					pointer.position(pointer.limit());
+				}
+				opaque = pointer;
+			} else if (srcBuffers[0] instanceof IntBuffer) {
+				IntPointer pointer = new IntPointer(totalCapacity);
+				for (int i = 0; i < srcBuffers.length; i++) {
+					clonedBuffers[i] = pointer.limit(pointer.position() + srcBuffers[i].limit())
+							.asBuffer().put((IntBuffer) srcBuffers[i]);
+					pointer.position(pointer.limit());
+				}
+				opaque = pointer;
+			} else if (srcBuffers[0] instanceof LongBuffer) {
+				LongPointer pointer = new LongPointer(totalCapacity);
+				for (int i = 0; i < srcBuffers.length; i++) {
+					clonedBuffers[i] = pointer.limit(pointer.position() + srcBuffers[i].limit())
+							.asBuffer().put((LongBuffer) srcBuffers[i]);
+					pointer.position(pointer.limit());
+				}
+				opaque = pointer;
+			} else if (srcBuffers[0] instanceof FloatBuffer) {
+				FloatPointer pointer = new FloatPointer(totalCapacity);
+				for (int i = 0; i < srcBuffers.length; i++) {
+					clonedBuffers[i] = pointer.limit(pointer.position() + srcBuffers[i].limit())
+							.asBuffer().put((FloatBuffer) srcBuffers[i]);
+					pointer.position(pointer.limit());
+				}
+				opaque = pointer;
+			} else if (srcBuffers[0] instanceof DoubleBuffer) {
+				DoublePointer pointer = new DoublePointer(totalCapacity);
+				for (int i = 0; i < srcBuffers.length; i++) {
+					clonedBuffers[i] = pointer.limit(pointer.position() + srcBuffers[i].limit())
+							.asBuffer().put((DoubleBuffer) srcBuffers[i]);
+					pointer.position(pointer.limit());
+				}
+				opaque = pointer;
+			}
+
+			for (int i = 0; i < srcBuffers.length; i++) {
+				srcBuffers[i].rewind();
+				clonedBuffers[i].rewind();
+			}
+		}
+
+		if (opaque != null) {
+			opaque.retainReference();
+		}
+		return opaque;
 	}
 
 }
