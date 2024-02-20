@@ -34,6 +34,7 @@ public class FFVideoFrameConverter {
 	public static boolean TODO_DEBUG = true;
 
 	private boolean optimized = true;
+	private DefaultFrameConverter defaultConverter = null;
 
 	public FFVideoFrameConverter() {
 		this(true);
@@ -55,44 +56,6 @@ public class FFVideoFrameConverter {
 		return createBufferedImage(frame, null);
 	}
 
-	/*
-	public VolatileImage createVolatileImage(Frame frame, VolatileImage image) {
-		
-		try {
-	
-			if (image == null) {
-				
-				GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		        GraphicsDevice gd = ge.getDefaultScreenDevice();
-		        GraphicsConfiguration gc = gd.getDefaultConfiguration();
-		        image = gc.createCompatibleVolatileImage(frame.imageWidth, frame.imageHeight);
-	
-			} else {
-				// image.flush();
-			}
-	
-			byte[] bufferPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
-			ByteBuffer buffer = (ByteBuffer) frame.image[0].position(0);
-	
-			if (bufferPixels.length == buffer.limit()) {
-				buffer.get(bufferPixels);
-				// Java2DFrameConverter.copy(frame, image, 1.0, false, null);
-				return image;
-			} else {
-				if (TODO_DEBUG) {
-					System.err.println("VideoFrameConverter (optimized), buffer lengths don't match.. (" + bufferPixels.length + " != " + buffer.limit() + ")");
-				}
-				return null;
-			}
-	
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-		
-	}
-	*/
-
 	public BufferedImage createBufferedImage(Frame frame, BufferedImage image) {
 
 		if (optimized) {
@@ -101,8 +64,6 @@ public class FFVideoFrameConverter {
 
 				if (image == null) {
 					image = new BufferedImage(frame.imageWidth, frame.imageHeight, Java2DFrameConverter.getBufferedImageType(frame));
-				} else {
-					// image.flush();
 				}
 
 				byte[] bufferPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
@@ -127,14 +88,36 @@ public class FFVideoFrameConverter {
 
 		} else {
 
-			// TODO? Java2DFrameConverter cannot be used for creating a list of images,
-			// it always returns the same BufferedImage instance but with new image data..
-			Java2DFrameConverter converter = new Java2DFrameConverter();
-			image = converter.convert(frame);
-			converter.close();
+			if (defaultConverter == null) {
+				defaultConverter = new DefaultFrameConverter();
+			}
+			
+			// Java2DFrameConverter returns same instance by default, try to reuse it if possible,
+			// if the image passed to this method is null this means a new instance should be created
+			if (image == null) {
+				defaultConverter.setImage(image);
+			} else if (image != defaultConverter.getImage()) {
+				defaultConverter.setImage(image);
+			}
 
-			return image;
+			return defaultConverter.convert(frame);
 
+		}
+
+	}
+
+	public static class DefaultFrameConverter extends Java2DFrameConverter {
+
+		public DefaultFrameConverter() {
+
+		}
+
+		protected BufferedImage getImage() {
+			return bufferedImage;
+		}
+
+		protected void setImage(BufferedImage image) {
+			this.bufferedImage = image;
 		}
 
 	}

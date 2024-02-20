@@ -22,10 +22,10 @@
  */
 package org.glasspath.common.media.ffmpeg;
 
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bytedeco.javacv.Frame;
 import org.glasspath.common.media.h264.H264NalUnit;
 import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.media.rtsp.H264ParameterSets;
@@ -43,7 +43,6 @@ public abstract class FFH264NalUnitDecoderThread {
 
 	private final Thread nalUnitDecoderThread;
 	private FFH264NalUnitDecoder decoder = null;
-	private FFVideoFrameConverter converter = null;
 	private volatile H264ParameterSets parameterSets = null;
 	private int skipFrames = 0;
 	private List<H264NalUnit> nalUnitQueue = new ArrayList<>(INITIAL_NAL_UNIT_QUEUE_SIZE);
@@ -65,8 +64,6 @@ public abstract class FFH264NalUnitDecoderThread {
 			public void run() {
 
 				createDecoder();
-
-				converter = new FFVideoFrameConverter();
 
 				while (!exit) {
 
@@ -133,7 +130,7 @@ public abstract class FFH264NalUnitDecoderThread {
 
 							if (frameAvailable) {
 
-								imageDecoded(converter.createBufferedImage(decoder.getFrame()), nalUnit.timestamp);
+								frameDecoded(decoder.getFrame(), nalUnit.timestamp);
 
 								skippedFrames = 0;
 								noFrameCount = 0;
@@ -184,7 +181,6 @@ public abstract class FFH264NalUnitDecoderThread {
 				}
 
 				decoder = null;
-				converter = null;
 
 			}
 
@@ -252,7 +248,7 @@ public abstract class FFH264NalUnitDecoderThread {
 
 	}
 
-	public abstract void imageDecoded(BufferedImage image, long timestamp);
+	public abstract void frameDecoded(Frame frame, long timestamp);
 
 	public abstract void statisticsUpdated(VideoPlayerStatistics statistics);
 

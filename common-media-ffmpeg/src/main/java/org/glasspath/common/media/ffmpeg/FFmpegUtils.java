@@ -63,8 +63,6 @@ public class FFmpegUtils {
 
 	public static void setup() {
 
-		System.out.println("FFmpegUtils setup");
-
 		if (TODO_DEBUG) {
 			System.setProperty("org.bytedeco.javacpp.logger.debug", "true");
 		}

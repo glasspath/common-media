@@ -22,6 +22,8 @@
  */
 package org.glasspath.common.media.video;
 
+import java.awt.image.BufferedImage;
+
 public abstract class FrameLoader {
 
 	protected DefaultVideo video = null;
@@ -38,11 +40,11 @@ public abstract class FrameLoader {
 		this.video = video;
 	}
 
-	public void loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height) {
-		loadFrame(callback, timestamp, width, height, false);
+	public void loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height, BufferedImage image) {
+		loadFrame(callback, timestamp, width, height, image, false);
 	}
 
-	public abstract boolean loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height, boolean returnFirstFrame);
+	public abstract boolean loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height, BufferedImage image, boolean returnFirstFrame);
 
 	public abstract void loadFrames(FrameLoaderCallback callback, long from, long to, int frameHeight, int totalWidth, int frameSpacing);
 

@@ -114,7 +114,7 @@ public class MFFrameLoader extends FrameLoader {
 	}
 
 	@Override
-	public synchronized boolean loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height, boolean returnFirstFrame) {
+	public synchronized boolean loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height, BufferedImage image, boolean returnFirstFrame) {
 
 		int result = 0;
 

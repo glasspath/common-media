@@ -22,7 +22,6 @@
  */
 package org.glasspath.common.media.ffmpeg.player;
 
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +31,7 @@ import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
 import org.glasspath.common.media.ffmpeg.FFH264NalUnitDecoderThread;
+import org.glasspath.common.media.ffmpeg.FFVideoFrameConverter;
 import org.glasspath.common.media.h264.H264NalUnit;
 import org.glasspath.common.media.player.FramePanel;
 import org.glasspath.common.media.player.IVideoPlayerListener;
@@ -51,6 +51,7 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 
 	private final RtspStreamListener streamListener;
 	private final FFH264NalUnitDecoderThread decoderThread;
+	private final FFVideoFrameConverter converter;
 	private final List<H264NalUnit> resumeNalUnits = new ArrayList<>();
 	private final Frame previewFrame = new Frame();
 	private H264ParameterSets parameterSets = null;
@@ -149,14 +150,14 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 		decoderThread = new FFH264NalUnitDecoderThread(resolution) {
 
 			@Override
-			public void imageDecoded(BufferedImage image, long timestamp) {
+			public void frameDecoded(org.bytedeco.javacv.Frame frame, long timestamp) {
 
 				SwingUtilities.invokeLater(new Runnable() {
 
 					@Override
 					public void run() {
 
-						previewFrame.setImage(image);
+						previewFrame.setImage(converter.createBufferedImage(frame, previewFrame.getImage()));
 						repaint();
 
 					}
@@ -170,6 +171,8 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 			}
 		};
 		decoderThread.setSkipFrames(skipFrames);
+
+		converter = new FFVideoFrameConverter();
 
 		setFrame(previewFrame);
 

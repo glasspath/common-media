@@ -46,7 +46,7 @@ public class FFFrameLoader extends FrameLoader {
 	private boolean fileOpen = false;
 
 	public FFFrameLoader() {
-		this(true); // TODO? (we are setting width/height on frame grabber, this causes optimized converter to fail..)
+		this(true);
 	}
 
 	public FFFrameLoader(boolean optimizedConverter) {
@@ -126,13 +126,12 @@ public class FFFrameLoader extends FrameLoader {
 	}
 
 	@Override
-	public boolean loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height, boolean returnFirstFrame) {
+	public synchronized void loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height, BufferedImage image) {
 
 		if (fileOpen) {
 
 			try {
 
-				// TODO? (Setting width/height causes optimized converter to fail..)
 				frameGrabber.setImageWidth(width);
 				frameGrabber.setImageHeight(height);
 
@@ -140,7 +139,6 @@ public class FFFrameLoader extends FrameLoader {
 
 				if (timestamp >= 0 && timestamp <= video.getDuration()) {
 
-					// frameGrabber.setTimestamp(timestamp);
 					frameGrabber.setVideoTimestamp(timestamp * 1000);
 
 					while (!callback.isCanceled()) { // TODO?
@@ -153,10 +151,52 @@ public class FFFrameLoader extends FrameLoader {
 
 						if (frame.image != null) {
 
-							BufferedImage image = frameConverter.createBufferedImage(frame);
+							callback.fireFrameLoaded(video, new Frame(timestamp, frameConverter.createBufferedImage(frame, image)));
 
-							// callback.fireFrameLoaded(video, new Frame(video.getTimestamp() + timestamp, image));
-							callback.fireFrameLoaded(video, new Frame(timestamp, image));
+							break;
+
+						}
+
+					}
+
+				}
+
+			} catch (Exception e) {
+				fileOpen = false;
+				e.printStackTrace();
+			}
+
+		}
+
+	}
+
+	@Override
+	public boolean loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height, BufferedImage image, boolean returnFirstFrame) {
+
+		if (fileOpen) {
+
+			try {
+
+				frameGrabber.setImageWidth(width);
+				frameGrabber.setImageHeight(height);
+
+				timestamp -= (video.getTimestamp() + video.getStartTimeCorrectionOffset()); // Video starts at 0
+
+				if (timestamp >= 0 && timestamp <= video.getDuration()) {
+
+					frameGrabber.setVideoTimestamp(timestamp * 1000);
+
+					while (!callback.isCanceled()) { // TODO?
+
+						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
+
+						if (frame == null) {
+							break;
+						}
+
+						if (frame.image != null) {
+
+							callback.fireFrameLoaded(video, new Frame(timestamp, frameConverter.createBufferedImage(frame, image)));
 
 							return true;
 
@@ -174,55 +214,6 @@ public class FFFrameLoader extends FrameLoader {
 		}
 
 		return false;
-
-	}
-
-	@Override
-	public synchronized void loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height) {
-
-		if (fileOpen) {
-
-			try {
-
-				frameGrabber.setImageWidth(width);
-				frameGrabber.setImageHeight(height);
-
-				timestamp -= (video.getTimestamp() + video.getStartTimeCorrectionOffset()); // Video starts at 0
-
-				if (timestamp >= 0 && timestamp <= video.getDuration()) {
-
-					// frameGrabber.setTimestamp(timestamp);
-					frameGrabber.setVideoTimestamp(timestamp * 1000);
-
-					while (!callback.isCanceled()) { // TODO?
-
-						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
-
-						if (frame == null) {
-							break;
-						}
-
-						if (frame.image != null) {
-
-							BufferedImage image = frameConverter.createBufferedImage(frame);
-
-							// callback.fireFrameLoaded(video, new Frame(video.getTimestamp() + timestamp, image));
-							callback.fireFrameLoaded(video, new Frame(timestamp, image));
-
-							break;
-
-						}
-
-					}
-
-				}
-
-			} catch (Exception e) {
-				fileOpen = false;
-				e.printStackTrace();
-			}
-
-		}
 
 	}
 
