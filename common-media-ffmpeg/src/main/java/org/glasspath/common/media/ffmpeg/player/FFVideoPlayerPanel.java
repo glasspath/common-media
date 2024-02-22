@@ -268,7 +268,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 				public void run() {
 
 					FFFrameLoader frameLoader = new FFFrameLoader();
-					frameLoader.installOnVideo(new DefaultVideo(video.getName(), video.getPath()));
+					frameLoader.open(new DefaultVideo(video.getName(), video.getPath()));
 
 					FrameLoaderCallback callback = new FrameLoaderCallback(0) {
 

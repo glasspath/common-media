@@ -245,7 +245,9 @@ public abstract class FrameBuffer<F> {
 
 								F frame = decode(workerIndex, buffer[i].source);
 								if (converterThreads == 0) {
-									buffer[i].setImage(convert(workerIndex, frame, buffer[i].getImage()));
+									if (frame != null) {
+										buffer[i].setImage(convert(workerIndex, frame, buffer[i].getImage()));
+									}
 								} else {
 									buffer[i].source = frame;
 								}

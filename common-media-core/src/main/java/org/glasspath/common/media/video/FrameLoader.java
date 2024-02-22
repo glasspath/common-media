@@ -32,12 +32,18 @@ public abstract class FrameLoader {
 
 	}
 
-	public void installOnVideo(DefaultVideo video) {
-		installOnVideo(video, 0, 0, true);
+	public void open(DefaultVideo video) {
+		open(video, 0, 0, true);
 	}
 
-	public void installOnVideo(DefaultVideo video, int width, int height, boolean closeFile) {
+	public void open(DefaultVideo video, int width, int height, boolean closeFile) {
 		this.video = video;
+	}
+
+	public abstract boolean isFileOpen();
+
+	public DefaultVideo getVideo() {
+		return video;
 	}
 
 	public void loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height, BufferedImage image) {

@@ -46,16 +46,12 @@ public class FFFrameLoader extends FrameLoader {
 	private boolean fileOpen = false;
 
 	public FFFrameLoader() {
-		this(true);
-	}
-
-	public FFFrameLoader(boolean optimizedConverter) {
-		frameConverter = new FFVideoFrameConverter(optimizedConverter);
+		frameConverter = new FFVideoFrameConverter();
 	}
 
 	@Override
-	public void installOnVideo(DefaultVideo video, int width, int height, boolean closeFile) {
-		super.installOnVideo(video, width, height, closeFile);
+	public void open(DefaultVideo video, int width, int height, boolean closeFile) {
+		super.open(video, width, height, closeFile);
 
 		frameGrabber = new FFmpegFrameGrabber(video.getPath());
 
@@ -99,6 +95,11 @@ public class FFFrameLoader extends FrameLoader {
 			e.printStackTrace();
 		}
 
+	}
+
+	@Override
+	public boolean isFileOpen() {
+		return fileOpen;
 	}
 
 	private void printMetadata(Map<String, String> metadata) {
@@ -241,7 +242,7 @@ public class FFFrameLoader extends FrameLoader {
 					if (video.getHeight() != 0 && video.getWidth() != 0) {
 						frameWidth = (int) (((double) frameHeight / (double) video.getHeight()) * video.getWidth());
 					} else {
-						frameWidth = frameHeight;
+						frameWidth = (frameHeight * 16) / 9; // Use most common aspect ratio if we don't know the video resolution
 					}
 					frameGrabber.setImageWidth(frameWidth);
 
@@ -391,11 +392,9 @@ public class FFFrameLoader extends FrameLoader {
 
 			fileOpen = false;
 
-			// close() will call stop() and release()
-			// frameGrabber.stop();
-			// frameGrabber.release();
 			if (frameGrabber != null) {
 				frameGrabber.close();
+				frameGrabber = null;
 			}
 
 		} catch (Exception e) {

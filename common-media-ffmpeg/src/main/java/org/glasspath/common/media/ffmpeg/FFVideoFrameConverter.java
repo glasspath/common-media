@@ -31,7 +31,7 @@ import org.bytedeco.javacv.Java2DFrameConverter;
 
 public class FFVideoFrameConverter {
 
-	public static boolean TODO_DEBUG = true;
+	public static boolean TODO_DEBUG = false;
 
 	private boolean optimized = true;
 	private DefaultFrameConverter defaultConverter = null;

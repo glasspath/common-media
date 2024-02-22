@@ -29,10 +29,10 @@ import java.util.List;
 public class DefaultVideo extends Video {
 
 	public static boolean TODO_DEBUG = false;
-
+	
 	private final FrameLoader frameLoader;
-	private int width = Resolution.W1280_H720.getWidth();
-	private int height = Resolution.W1280_H720.getHeight();
+	private int width = 0;
+	private int height = 0;
 	private long timestamp = 0L;
 	private long duration = 0L;
 	private Double frameRate = null;
@@ -40,15 +40,15 @@ public class DefaultVideo extends Video {
 	private final List<MetadataTimestamp> metadataTimestamps = new ArrayList<>();
 
 	public DefaultVideo(String name, String path) {
-		this(name, path, null, true, Resolution.W1280_H720.getWidth(), Resolution.W1280_H720.getHeight());
+		this(name, path, null, true, 0, 0);
 	}
 
 	public DefaultVideo(String name, String path, FrameLoader frameLoader) {
-		this(name, path, null, true, Resolution.W1280_H720.getWidth(), Resolution.W1280_H720.getHeight());
+		this(name, path, null, true, 0, 0);
 	}
 
 	public DefaultVideo(String name, String path, FrameLoader frameLoader, boolean closeFile) {
-		this(name, path, frameLoader, closeFile, Resolution.W1280_H720.getWidth(), Resolution.W1280_H720.getHeight());
+		this(name, path, frameLoader, closeFile, 0, 0);
 	}
 
 	public DefaultVideo(String name, String path, FrameLoader frameLoader, boolean closeFile, int width, int height) {
@@ -59,7 +59,7 @@ public class DefaultVideo extends Video {
 		this.height = height;
 
 		if (frameLoader != null) {
-			frameLoader.installOnVideo(this, width, height, closeFile);
+			frameLoader.open(this, width, height, closeFile);
 		}
 
 	}

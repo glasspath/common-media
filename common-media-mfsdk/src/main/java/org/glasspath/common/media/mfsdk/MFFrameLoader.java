@@ -71,8 +71,8 @@ public class MFFrameLoader extends FrameLoader {
 	}
 
 	@Override
-	public void installOnVideo(DefaultVideo video, int width, int height, boolean closeFile) {
-		super.installOnVideo(video, width, height, closeFile);
+	public void open(DefaultVideo video, int width, int height, boolean closeFile) {
+		super.open(video, width, height, closeFile);
 
 		if (!video.isPathValid()) {
 			sourceType = MFUtils.MFSDK_SOURCE_TYPE_DUMMY;
@@ -114,6 +114,11 @@ public class MFFrameLoader extends FrameLoader {
 	}
 
 	@Override
+	public boolean isFileOpen() {
+		return true; // TODO
+	}
+
+	@Override
 	public synchronized boolean loadFrame(FrameLoaderCallback callback, long timestamp, int width, int height, BufferedImage image, boolean returnFirstFrame) {
 
 		int result = 0;
@@ -134,7 +139,7 @@ public class MFFrameLoader extends FrameLoader {
 					if (video.getHeight() != 0 && video.getWidth() != 0) {
 						frameWidth = (int) (((double) frameHeight / (double) video.getHeight()) * video.getWidth());
 					} else {
-						frameWidth = frameHeight;
+						frameWidth = (frameHeight * 16) / 9; // Use most common aspect ratio if we don't know the video resolution
 					}
 
 					activeCallback = callback;
@@ -178,7 +183,7 @@ public class MFFrameLoader extends FrameLoader {
 			if (video.getHeight() != 0 && video.getWidth() != 0) {
 				frameWidth = (int) (((double) frameHeight / (double) video.getHeight()) * video.getWidth());
 			} else {
-				frameWidth = frameHeight;
+				frameWidth = (frameHeight * 16) / 9; // Use most common aspect ratio if we don't know the video resolution
 			}
 
 			double count = (double) totalWidth / (double) (frameWidth + frameSpacing);
