@@ -39,8 +39,10 @@ import java.util.prefs.Preferences;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JRootPane;
 import javax.swing.SwingUtilities;
 
+import org.glasspath.common.macos.MacOSUtils;
 import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
 import org.glasspath.common.media.player.icons.Icons;
@@ -50,6 +52,8 @@ import org.glasspath.common.media.player.tools.FileTools;
 import org.glasspath.common.media.player.tools.PlaybackTools;
 import org.glasspath.common.media.player.tools.ViewTools;
 import org.glasspath.common.media.video.Video;
+import org.glasspath.common.os.OsUtils;
+import org.glasspath.common.swing.color.ColorUtils;
 import org.glasspath.common.swing.dialog.ProgressDialog;
 import org.glasspath.common.swing.file.chooser.FileChooser;
 import org.glasspath.common.swing.frame.FrameUtils;
@@ -158,6 +162,12 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 
 		if (Theme.isDark()) {
 			frame.getRootPane().setBackground(ControlsBar.CONTROLS_BAR_BG_COLOR);
+		}
+
+		JRootPane rootPane = frame.getRootPane();
+		rootPane.setBackground(ColorUtils.TITLE_BAR_COLOR);
+		if (OsUtils.PLATFORM_MACOS) {
+			MacOSUtils.hideTitleBar(frame, true, false);
 		}
 
 		FrameUtils.loadFrameDimensions(frame, preferences);
