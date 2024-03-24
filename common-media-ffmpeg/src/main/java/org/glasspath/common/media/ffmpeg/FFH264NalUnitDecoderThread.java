@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameRecorder.Exception;
 import org.glasspath.common.media.h264.H264NalUnit;
 import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.media.rtsp.H264ParameterSets;
@@ -180,6 +181,14 @@ public abstract class FFH264NalUnitDecoderThread {
 					System.out.println("FFH264NalUnitDecoderThread, exiting nal unit decoder thread");
 				}
 
+				if (decoder != null) {
+					try {
+						decoder.release();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+
 				decoder = null;
 
 			}
@@ -187,7 +196,11 @@ public abstract class FFH264NalUnitDecoderThread {
 			private void createDecoder() {
 
 				if (decoder != null) {
-					decoder.close();
+					try {
+						decoder.release();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 
 				decoder = new FFH264NalUnitDecoder();

@@ -509,6 +509,7 @@ public class FFH264NalUnitDecoder {
 		return frame;
 	}
 
+	/*
 	public void close() {
 
 		if (TODO_DEBUG) {
@@ -526,5 +527,6 @@ public class FFH264NalUnitDecoder {
 		// TODO: What else needs to be closed/released?
 
 	}
+	*/
 
 }
