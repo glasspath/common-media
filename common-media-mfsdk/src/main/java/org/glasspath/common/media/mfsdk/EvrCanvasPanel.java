@@ -56,6 +56,7 @@ public abstract class EvrCanvasPanel extends JPanel {
 
 	protected final EvrCanvas evrCanvas;
 	private Resolution resolution = Resolution.W1280_H720;
+	private int defaultCursor = Cursor.DEFAULT_CURSOR;
 	private int translateX = 0;
 	private int translateY = 0;
 	private double scale = 1.0;
@@ -135,7 +136,7 @@ public abstract class EvrCanvasPanel extends JPanel {
 					translateXStart = 0;
 					translateYStart = 0;
 
-					setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+					setCursor(Cursor.getPredefinedCursor(defaultCursor));
 					updateVideoPosition();
 
 				}
@@ -179,6 +180,15 @@ public abstract class EvrCanvasPanel extends JPanel {
 
 	public void setResolution(Resolution resolution) {
 		this.resolution = resolution;
+	}
+
+	public int getDefaultCursor() {
+		return defaultCursor;
+	}
+
+	public void setDefaultCursor(int defaultCursor) {
+		this.defaultCursor = defaultCursor;
+		setCursor(Cursor.getPredefinedCursor(defaultCursor));
 	}
 
 	protected abstract long getPlayerInstance();

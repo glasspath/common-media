@@ -39,6 +39,10 @@ public interface IVideoPreviewPanel {
 
 	public void populateViewMenu(JMenu menu, JMenuItem overlayMenuItem);
 
+	public int getDefaultCursor();
+
+	public void setDefaultCursor(int defaultCursor);
+
 	public IOverlay getOverlay();
 
 	public void setOverlay(IOverlay overlay);

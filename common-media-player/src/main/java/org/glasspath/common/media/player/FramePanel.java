@@ -61,6 +61,7 @@ public class FramePanel extends JPanel {
 	public static final double MAX_SCALE = 25.0;
 
 	private Frame frame = null;
+	private int defaultCursor = Cursor.DEFAULT_CURSOR;
 	private IOverlay overlay = null;
 	private boolean overlayVisible = true;
 	private Double customScale = null;
@@ -124,7 +125,7 @@ public class FramePanel extends JPanel {
 					translateXStart = 0;
 					translateYStart = 0;
 
-					setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+					setCursor(Cursor.getPredefinedCursor(defaultCursor));
 					repaint();
 
 				}
@@ -161,6 +162,15 @@ public class FramePanel extends JPanel {
 
 	public void setFrame(Frame frame) {
 		this.frame = frame;
+	}
+
+	public int getDefaultCursor() {
+		return defaultCursor;
+	}
+
+	public void setDefaultCursor(int defaultCursor) {
+		this.defaultCursor = defaultCursor;
+		setCursor(Cursor.getPredefinedCursor(defaultCursor));
 	}
 
 	public IOverlay getOverlay() {
