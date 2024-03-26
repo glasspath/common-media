@@ -116,42 +116,48 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 						if (playing) {
 
-							Frame frame = getFrame();
-							if (frame != null) {
+							if (isFrameAvailable()) {
 
 								double speedFactor = 1.0 + (1.0 - (context.getRate() / 100.0));
 
-								// TODO: Calculate remaining time
+								// TODO: Calculate remaining time (subtract time needed for rendering frame)
 								int interval = (int) (33 * speedFactor);
+								if (interval > 0) {
+									Thread.sleep(interval);
+								}
 
-								Thread.sleep(interval);
-
-								SwingUtilities.invokeLater(new Runnable() {
+								// TODO: Use invokeLater instead of invokeAndWait? For now we want to render every frame
+								SwingUtilities.invokeAndWait(new Runnable() {
 
 									@Override
 									public void run() {
-										showFrame(frame);
+										Frame frame = getFrame();
+										if (frame != null) {
+											showFrame(frame);
+										}
 									}
 								});
 
 							} else {
-								Thread.sleep(10);
+								Thread.sleep(5);
 							}
 
 						} else {
 
 							if (showSingleFrame) {
 
-								Frame frame = getFrame();
-								if (frame != null) {
+								if (isFrameAvailable()) {
 
 									showSingleFrame = false;
 
-									SwingUtilities.invokeLater(new Runnable() {
+									SwingUtilities.invokeAndWait(new Runnable() {
 
 										@Override
 										public void run() {
-											showFrame(frame);
+											Frame frame = getFrame();
+											if (frame != null) {
+												showFrame(frame);
+											}
 										}
 									});
 
@@ -159,13 +165,13 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 							}
 
-							Thread.sleep(10);
+							Thread.sleep(5);
 
 						}
 
 					}
 
-				} catch (InterruptedException e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 
@@ -173,6 +179,8 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 		});
 
 	}
+
+	protected abstract boolean isFrameAvailable();
 
 	protected abstract Frame getFrame();
 
@@ -322,9 +330,11 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 		if (step == 1) {
 
-			Frame frame = getFrame();
-			if (frame != null) {
-				showFrame(frame);
+			if (isFrameAvailable()) {
+				Frame frame = getFrame();
+				if (frame != null) {
+					showFrame(frame);
+				}
 			}
 
 		} else {

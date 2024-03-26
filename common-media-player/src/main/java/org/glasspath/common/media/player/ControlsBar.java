@@ -323,7 +323,7 @@ public class ControlsBar extends JPanel {
 			}
 		});
 
-		rateSpinner = new JSpinner(new SpinnerNumberModel(100, 1, 200, 1));
+		rateSpinner = new JSpinner(new SpinnerNumberModel(100, 1, 500, 1));
 		rateSpinner.setEnabled(false);
 		initSpinner(rateSpinner);
 		add(rateSpinner, new GridBagConstraints(13, 2, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
