@@ -349,7 +349,7 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 		long t = timestamp - (step * 50000);
 		if (t < 0) {
-			t = 0;
+			t = getDuration() - 1000; // TODO
 		}
 
 		setTimestamp(t, false);
