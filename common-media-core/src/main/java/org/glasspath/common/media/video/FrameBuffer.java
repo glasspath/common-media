@@ -252,7 +252,7 @@ public abstract class FrameBuffer<F> {
 									buffer[i].source = frame;
 								}
 
-								if (buffer[i].source == null || TODO_TEST_RECYCLE_MODE) {
+								if (frame == null) {
 
 									if (isEndOfVideoReached(workerIndex)) {
 
