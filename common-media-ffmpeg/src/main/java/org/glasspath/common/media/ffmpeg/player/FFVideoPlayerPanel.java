@@ -216,14 +216,14 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		}
 
 	}
-	
+
 	@Override
 	protected Frame getFrame() {
 
 		if (buffer[bufferIndex].isImageReady()) {
 
 			BufferedImage swapImage = frame.getImage();
-			
+
 			frame.setTimestamp(buffer[bufferIndex].getTimestamp());
 			frame.setImage(buffer[bufferIndex].getImage());
 
@@ -237,50 +237,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 			decodeFailedCount = 0;
 
 			return frame;
-/* TODO
-		} else if (buffer[bufferIndex].getState() < 0) {
 
-			// TODO? When repeat is not enabled decoding will fail on the last frame,
-			// here we set playing to false, this is normal behavior, but we can also
-			// get here if something else goes wrong (decoding failed on another frame
-			// or pre-processing failed for example) is this the way we want to do this?
-
-			if (buffer[bufferIndex].getState() == BufferedFrame.END_OF_VIDEO_REACHED) {
-
-				SwingUtilities.invokeLater(new Runnable() {
-
-					@Override
-					public void run() {
-						setPlaying(false);
-					}
-				});
-
-			} else {
-
-				decodeFailedCount++;
-				if (decodeFailedCount >= MAX_DECODE_FAILED_COUNT) {
-
-					SwingUtilities.invokeLater(new Runnable() {
-
-						@Override
-						public void run() {
-							setPlaying(false);
-						}
-					});
-
-				}
-
-			}
-
-			buffer[bufferIndex].reset(buffer[bufferIndex].getImage());
-
-			bufferIndex++;
-			if (bufferIndex >= buffer.length) {
-				bufferIndex = 0;
-			}
-
-			return null;
-*/
 		} else {
 			return null;
 		}

@@ -107,6 +107,8 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 		playbackThread = new Thread(new Runnable() {
 
+			private volatile boolean frameCollected = false;
+
 			@Override
 			public void run() {
 
@@ -118,25 +120,36 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 							if (isFrameAvailable()) {
 
+								frameCollected = false;
+
 								double speedFactor = 1.0 + (1.0 - (context.getRate() / 100.0));
 
+								// TODO: Use actual frame rate of video
 								// TODO: Calculate remaining time (subtract time needed for rendering frame)
 								int interval = (int) (33 * speedFactor);
 								if (interval > 0) {
 									Thread.sleep(interval);
 								}
 
-								// TODO: Use invokeLater instead of invokeAndWait? For now we want to render every frame
-								SwingUtilities.invokeAndWait(new Runnable() {
+								SwingUtilities.invokeLater(new Runnable() {
 
 									@Override
 									public void run() {
+
 										Frame frame = getFrame();
+
+										frameCollected = true;
+
 										if (frame != null) {
 											showFrame(frame);
 										}
+
 									}
 								});
+
+								while (!frameCollected) {
+									// Thread.sleep(1);
+								}
 
 							} else {
 								Thread.sleep(5);
@@ -188,9 +201,11 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 		timestamp = frame.getTimestamp().longValue();
 
-		IOverlay overlay = getOverlay();
-		if (overlay != null) {
-			overlay.setTimestamp(timestamp);
+		if (isOverlayVisible()) {
+			IOverlay overlay = getOverlay();
+			if (overlay != null) {
+				overlay.setTimestamp(timestamp);
+			}
 		}
 
 		framePanel.setFrame(frame);
