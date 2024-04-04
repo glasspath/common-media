@@ -234,6 +234,10 @@ public abstract class FFH264NalUnitDecoderThread {
 		this.skipFrames = skipFrames;
 	}
 
+	public void setName(String name) {
+		nalUnitDecoderThread.setName(name);
+	}
+
 	public void start() {
 		nalUnitDecoderThread.start();
 	}
