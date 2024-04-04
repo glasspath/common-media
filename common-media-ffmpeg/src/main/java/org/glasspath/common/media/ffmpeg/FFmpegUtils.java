@@ -24,7 +24,7 @@ package org.glasspath.common.media.ffmpeg;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
@@ -33,9 +33,7 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
 import org.bytedeco.ffmpeg.avcodec.AVCodecHWConfig;
@@ -55,7 +53,6 @@ import org.bytedeco.javacv.Frame;
 public class FFmpegUtils {
 
 	public static boolean TODO_DEBUG = false;
-	public static final String TRANSCODE_PRESET_PREFIX = "transcode-preset:";
 
 	private FFmpegUtils() {
 
@@ -117,55 +114,15 @@ public class FFmpegUtils {
 
 	}
 
-	public static Map<String, List<String>> loadPresets(File presetsFile) {
-
-		Map<String, List<String>> presets = new HashMap<>();
-
-		try (BufferedReader bufferedReader = new BufferedReader(new FileReader(presetsFile))) {
-
-			String presetName = null;
-			List<String> args = null;
-
-			String line;
-			while ((line = bufferedReader.readLine()) != null) {
-
-				if (line.toLowerCase().startsWith(TRANSCODE_PRESET_PREFIX)) {
-
-					if (presetName != null && presetName.length() > 0 && args != null) {
-						presets.put(presetName, args);
-					}
-
-					presetName = line.substring(TRANSCODE_PRESET_PREFIX.length()).trim();
-					args = new ArrayList<>();
-
-				} else if (presetName != null && presetName.length() > 0 && args != null) {
-
-					String arg = line.trim();
-					if (arg.length() > 0) {
-						args.add(arg);
-					}
-
-				}
-
-			}
-
-			if (presetName != null && presetName.length() > 0 && args != null) {
-				presets.put(presetName, args);
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return presets;
-
-	}
-
 	public static void transcode(File inputFile, File outputFile) {
 		transcode(inputFile, null, outputFile);
 	}
 
 	public static void transcode(File inputFile, List<String> args, File outputFile) {
+		transcode(inputFile, null, outputFile, null);
+	}
+
+	public static void transcode(File inputFile, List<String> args, File outputFile, TranscodingListener listener) {
 
 		try {
 
@@ -173,6 +130,8 @@ public class FFmpegUtils {
 
 			List<String> commands = new ArrayList<>();
 			commands.add(ffmpeg);
+			commands.add("-loglevel");
+			commands.add("info");
 			commands.add("-y"); // Overwrite (yes)
 			commands.add("-i");
 			commands.add(inputFile.getAbsolutePath());
@@ -181,8 +140,28 @@ public class FFmpegUtils {
 			}
 			commands.add(outputFile.getAbsolutePath());
 
-			ProcessBuilder pb = new ProcessBuilder(commands);
-			pb.inheritIO().start().waitFor();
+			ProcessBuilder processBuilder = new ProcessBuilder(commands);
+
+			if (listener != null) {
+
+				Process process = processBuilder.start();
+
+				BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+					listener.println(line);
+				}
+
+				process.waitFor();
+
+				listener.println("");
+				listener.println("Video exported to " + outputFile.getAbsolutePath());
+
+			} else {
+				Process process = processBuilder.inheritIO().start();
+				process.waitFor();
+			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -356,4 +335,10 @@ public class FFmpegUtils {
 		return opaque;
 	}
 
+	public static interface TranscodingListener {
+		
+		public void println(String line);
+		
+	}
+	
 }
