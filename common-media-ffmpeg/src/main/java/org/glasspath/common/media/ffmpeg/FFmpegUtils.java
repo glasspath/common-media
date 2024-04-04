@@ -49,11 +49,14 @@ import org.bytedeco.javacpp.LongPointer;
 import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.javacpp.ShortPointer;
 import org.bytedeco.javacv.Frame;
+import org.glasspath.common.os.OsUtils;
 
 public class FFmpegUtils {
 
 	public static boolean TODO_DEBUG = false;
 
+	public static final int MIN_TRANSCODED_FILE_LENGTH = 100; // TODO: Checking for length > 0 also worked, what is the minimal file size we expect?
+	
 	private FFmpegUtils() {
 
 	}
@@ -126,6 +129,21 @@ public class FFmpegUtils {
 
 		try {
 
+			if (outputFile.exists()) {
+
+				if (listener != null) {
+					listener.println("Deleting " + outputFile.getAbsolutePath());
+				}
+
+				if (!OsUtils.deleteFile(outputFile)) {
+					if (listener != null) {
+						listener.println("File could not be deleted..");
+					}
+					return;
+				}
+
+			}
+
 			String ffmpeg = Loader.load(org.bytedeco.ffmpeg.ffmpeg.class);
 
 			List<String> commands = new ArrayList<>();
@@ -156,7 +174,11 @@ public class FFmpegUtils {
 				process.waitFor();
 
 				listener.println("");
-				listener.println("Video exported to " + outputFile.getAbsolutePath());
+				if (outputFile.exists() && outputFile.length() >= MIN_TRANSCODED_FILE_LENGTH) {
+					listener.println("Video exported to " + outputFile.getAbsolutePath());
+				} else {
+					listener.println("Exporting failed..");
+				}
 
 			} else {
 				Process process = processBuilder.inheritIO().start();
@@ -336,9 +358,9 @@ public class FFmpegUtils {
 	}
 
 	public static interface TranscodingListener {
-		
+
 		public void println(String line);
-		
+
 	}
-	
+
 }
