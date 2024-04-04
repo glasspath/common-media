@@ -44,9 +44,28 @@ public class FFFrameLoader extends FrameLoader {
 	private final FFVideoFrameConverter frameConverter;
 	private FFmpegFrameGrabber frameGrabber = null;
 	private boolean fileOpen = false;
+	private boolean keyFrameMode = false;
 
 	public FFFrameLoader() {
 		frameConverter = new FFVideoFrameConverter();
+	}
+
+	public boolean isKeyFrameMode() {
+		return keyFrameMode;
+	}
+
+	public void setKeyFrameMode(boolean keyFrameMode) {
+		this.keyFrameMode = keyFrameMode;
+	}
+
+	protected int getThreads() {
+
+		// TODO?
+		int cores = Runtime.getRuntime().availableProcessors(); // Includes hyper threading cores
+		int threads = cores + 1;
+
+		return threads;
+
 	}
 
 	@Override
@@ -54,16 +73,19 @@ public class FFFrameLoader extends FrameLoader {
 		super.open(video, width, height, closeFile);
 
 		frameGrabber = new FFmpegFrameGrabber(video.getPath());
+		// frameGrabber.setImageScalingFlags(org.bytedeco.ffmpeg.global.swscale.SWS_FAST_BILINEAR);
+		// frameGrabber.setImageMode(ImageMode.GRAY);
+		// frameGrabber.setVideoCodecName("h264_qsv");
+		// frameGrabber.setVideoCodecName("h264_cuvid");
+		// frameGrabber.setVideoCodecName("libopenh264");
+		// frameGrabber.setVideoOption("tune", "fastdecode+zerolatency");
 
 		if (width > 0 && height > 0) {
 			frameGrabber.setImageWidth(width);
 			frameGrabber.setImageHeight(height);
 		}
 
-		// TODO
-		int cores = Runtime.getRuntime().availableProcessors(); // Includes hyper threading cores
-		int threads = cores + 1;
-		frameGrabber.setVideoOption("threads", "" + threads);
+		frameGrabber.setVideoOption("threads", "" + getThreads());
 
 		try {
 
@@ -144,7 +166,7 @@ public class FFFrameLoader extends FrameLoader {
 
 					while (!callback.isCanceled()) { // TODO?
 
-						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
+						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, keyFrameMode);
 
 						if (frame == null) {
 							break;
@@ -189,7 +211,7 @@ public class FFFrameLoader extends FrameLoader {
 
 					while (!callback.isCanceled()) { // TODO?
 
-						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
+						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, keyFrameMode);
 
 						if (frame == null) {
 							break;
@@ -258,11 +280,10 @@ public class FFFrameLoader extends FrameLoader {
 							if (TODO_DEBUG) {
 								System.out.println("Grabbing frame for video: " + video.getName() + " at: " + timestamp);
 							}
-							/*
+
 							frameGrabber.setVideoTimestamp(timestamp * 1000);
-							org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
-							 */
-							org.bytedeco.javacv.Frame frame = grabFrame(frameGrabber, timestamp);
+							org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, keyFrameMode);
+							// org.bytedeco.javacv.Frame frame = grabFrame(frameGrabber, timestamp, keyFrameMode);
 
 							if (frame == null) {
 
@@ -339,41 +360,50 @@ public class FFFrameLoader extends FrameLoader {
 
 		if (fileOpen && count > 0) {
 
-			long videoCorrectionOffset = video.getStartTimeCorrectionOffset();
-			long fromTimestamp = from - (video.getTimestamp() + videoCorrectionOffset);
+			try {
 
-			if (fromTimestamp < 0) {
-				fromTimestamp = 0;
-			}
+				long videoCorrectionOffset = video.getStartTimeCorrectionOffset();
+				long fromTimestamp = from - (video.getTimestamp() + videoCorrectionOffset);
 
-			if (fromTimestamp < video.getDuration()) {
+				if (fromTimestamp < 0) {
+					fromTimestamp = 0;
+				}
 
-				frameGrabber.setImageWidth(width);
-				frameGrabber.setImageHeight(height);
+				if (fromTimestamp < video.getDuration()) {
 
-				long timestamp = fromTimestamp;
-				long toTimestamp = from + (interval * count);
-				while (!callback.isCanceled() && timestamp < video.getDuration() && timestamp < toTimestamp) {
+					frameGrabber.setImageWidth(width);
+					frameGrabber.setImageHeight(height);
 
-					if (TODO_DEBUG) {
-						System.out.println("Grabbing frame for video: " + video.getName() + " at: " + timestamp);
-					}
+					long timestamp = fromTimestamp;
+					long toTimestamp = from + (interval * count);
+					while (!callback.isCanceled() && timestamp < video.getDuration() && timestamp < toTimestamp) {
 
-					org.bytedeco.javacv.Frame frame = grabFrame(frameGrabber, timestamp);
-
-					if (frame != null && frame.image != null) {
-						BufferedImage image = frameConverter.createBufferedImage(frame);
-						// callback.fireFrameLoaded(video, new Frame(video.getTimestamp() + timestamp, image));
 						if (TODO_DEBUG) {
-							System.out.println("Frame loaded for video: " + video.getName() + " pts: " + frame.timestamp);
+							System.out.println("Grabbing frame for video: " + video.getName() + " at: " + timestamp);
 						}
-						callback.fireFrameLoaded(video, new Frame(timestamp, image));
-					}
 
-					timestamp += interval;
+						frameGrabber.setVideoTimestamp(timestamp * 1000);
+						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, keyFrameMode);
+						// org.bytedeco.javacv.Frame frame = grabFrame(frameGrabber, timestamp, keyFrameMode);
+
+						if (frame != null && frame.image != null) {
+							BufferedImage image = frameConverter.createBufferedImage(frame);
+							// callback.fireFrameLoaded(video, new Frame(video.getTimestamp() + timestamp, image));
+							if (TODO_DEBUG) {
+								System.out.println("Frame loaded for video: " + video.getName() + " pts: " + frame.timestamp);
+							}
+							callback.fireFrameLoaded(video, new Frame(timestamp, image));
+						}
+
+						timestamp += interval;
+
+					}
 
 				}
 
+			} catch (Exception e) {
+				fileOpen = false;
+				e.printStackTrace();
 			}
 
 		}
@@ -404,17 +434,19 @@ public class FFFrameLoader extends FrameLoader {
 	}
 
 	// TODO
-	public static synchronized org.bytedeco.javacv.Frame grabFrame(FFmpegFrameGrabber frameGrabber, long timestamp) {
-
+	/*
+	public static synchronized org.bytedeco.javacv.Frame grabFrame(FFmpegFrameGrabber frameGrabber, long timestamp, boolean keyFrameMode) {
+	
 		try {
 			frameGrabber.setVideoTimestamp(timestamp * 1000);
-			return frameGrabber.grabFrame(false, true, true, false);
+			return frameGrabber.grabFrame(false, true, true, keyFrameMode);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+	
 		return null;
-
+	
 	}
+	*/
 
 }
