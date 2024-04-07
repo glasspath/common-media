@@ -44,18 +44,18 @@ public class FFFrameLoader extends FrameLoader {
 	private final FFVideoFrameConverter frameConverter;
 	private FFmpegFrameGrabber frameGrabber = null;
 	private boolean fileOpen = false;
-	private boolean keyFrameMode = false;
+	private int maxSeekCount = -1;
 
 	public FFFrameLoader() {
 		frameConverter = new FFVideoFrameConverter();
 	}
 
-	public boolean isKeyFrameMode() {
-		return keyFrameMode;
+	public int getMaxSeekCount() {
+		return maxSeekCount;
 	}
 
-	public void setKeyFrameMode(boolean keyFrameMode) {
-		this.keyFrameMode = keyFrameMode;
+	public void setMaxSeekCount(int maxSeekCount) {
+		this.maxSeekCount = maxSeekCount;
 	}
 
 	protected int getThreads() {
@@ -72,7 +72,39 @@ public class FFFrameLoader extends FrameLoader {
 	public void open(DefaultVideo video, int width, int height, boolean closeFile) {
 		super.open(video, width, height, closeFile);
 
-		frameGrabber = new FFmpegFrameGrabber(video.getPath());
+		frameGrabber = new FFmpegFrameGrabber(video.getPath()) {
+
+			private int seekCount = 0;
+
+			@Override
+			public void setVideoTimestamp(long timestamp) throws Exception {
+				seekCount = 0;
+				super.setVideoTimestamp(timestamp);
+			}
+
+			@Override
+			public double getFrameRate() {
+
+				if (maxSeekCount >= 0) {
+
+					// TODO? This is a hack to trick FFmpegFrameGrabber,
+					// it uses getFrameRate() to calculate the frame duration,
+					// this way 'if (ts + frameDuration > timestamp)' will return immediately
+					// getFrameRate() is called 2 times before the while loop and 2 times
+					// in each iteration.
+					if (seekCount >= (maxSeekCount * 2) + 2) {
+						return 0.01;
+					} else {
+						seekCount++;
+						return super.getFrameRate();
+					}
+
+				} else {
+					return super.getFrameRate();
+				}
+
+			}
+		};
 		// frameGrabber.setImageScalingFlags(org.bytedeco.ffmpeg.global.swscale.SWS_FAST_BILINEAR);
 		// frameGrabber.setImageMode(ImageMode.GRAY);
 		// frameGrabber.setVideoCodecName("h264_qsv");
@@ -166,7 +198,7 @@ public class FFFrameLoader extends FrameLoader {
 
 					while (!callback.isCanceled()) { // TODO?
 
-						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, keyFrameMode);
+						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
 
 						if (frame == null) {
 							break;
@@ -211,7 +243,7 @@ public class FFFrameLoader extends FrameLoader {
 
 					while (!callback.isCanceled()) { // TODO?
 
-						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, keyFrameMode);
+						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
 
 						if (frame == null) {
 							break;
@@ -282,7 +314,7 @@ public class FFFrameLoader extends FrameLoader {
 							}
 
 							frameGrabber.setVideoTimestamp(timestamp * 1000);
-							org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, keyFrameMode);
+							org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
 							// org.bytedeco.javacv.Frame frame = grabFrame(frameGrabber, timestamp, keyFrameMode);
 
 							if (frame == null) {
@@ -383,7 +415,7 @@ public class FFFrameLoader extends FrameLoader {
 						}
 
 						frameGrabber.setVideoTimestamp(timestamp * 1000);
-						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, keyFrameMode);
+						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
 						// org.bytedeco.javacv.Frame frame = grabFrame(frameGrabber, timestamp, keyFrameMode);
 
 						if (frame != null && frame.image != null) {
