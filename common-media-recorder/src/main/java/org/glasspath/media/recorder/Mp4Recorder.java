@@ -41,7 +41,7 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 	}
 
 	@Override
-	protected boolean createFile(String recordPath, Resolution resolution, H264ParameterSets parameterSets, long pts, long created) {
+	protected boolean createRecording(String recordPath, Resolution resolution, H264ParameterSets parameterSets, long pts, long created) {
 
 		try {
 
@@ -108,8 +108,13 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 	}
 
 	@Override
-	protected long getBytesWritten() {
-		return recording != null ? recording.getBytesWritten() : 0;
+	protected long getRecordingSize() {
+		return recording != null ? recording.getBytesWritten() : 0L;
+	}
+
+	@Override
+	protected long getRecordingLength() {
+		return recording != null ? recording.getDuration() : 0L;
 	}
 
 	protected UUIDBox createUUIDBox() {
@@ -124,7 +129,7 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 	}
 
 	@Override
-	protected boolean closeFile(Mp4Recording recording) {
+	protected boolean closeRecording(Mp4Recording recording) {
 
 		boolean result = true;
 
