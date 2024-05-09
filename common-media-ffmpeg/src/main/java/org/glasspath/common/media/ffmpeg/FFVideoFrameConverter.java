@@ -91,7 +91,7 @@ public class FFVideoFrameConverter {
 			if (defaultConverter == null) {
 				defaultConverter = new DefaultFrameConverter();
 			}
-			
+
 			// Java2DFrameConverter returns same instance by default, try to reuse it if possible,
 			// if the image passed to this method is null this means a new instance should be created
 			if (image == null) {
