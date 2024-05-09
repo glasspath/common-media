@@ -34,6 +34,16 @@ public enum Resolution {
 	W3840_H2160("3840x2160, 2160p, 4K, 19:10", 3840, 2160),
 	W7680_H4320("7680x4320, 4320p, 8K, 16:9", 7680, 4320);
 
+	public static final Resolution[] COMMON_CAMERA_RESOLUTIONS = new Resolution[] {
+			Resolution.W640_H480,
+			Resolution.W800_H600,
+			Resolution.W1280_H720,
+			Resolution.W1920_H1080,
+			Resolution.W2048_H1080,
+			Resolution.W2560_H1440,
+			Resolution.W3840_H2160
+	};
+
 	private final String name;
 	private final int width;
 	private final int height;
