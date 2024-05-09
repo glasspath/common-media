@@ -38,6 +38,8 @@ public interface IVideoPlayerPanel {
 
 	public void open(Video video);
 
+	public Video getVideo();
+
 	public void close();
 
 	public boolean isRepeatEnabled();

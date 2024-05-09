@@ -144,13 +144,18 @@ public abstract class RtspStreamReader {
 							parseReceivedBytes();
 
 						} catch (Exception e) {
-							e.printStackTrace();
+							// TODO: Was printing many stack traces, add longer Thread.sleep() here?
+							if (TODO_DEBUG) {
+								e.printStackTrace();
+							}
 						}
 
 						try {
 							Thread.sleep(READ_INTERVAL);
 						} catch (InterruptedException e) {
-							e.printStackTrace();
+							if (TODO_DEBUG) {
+								e.printStackTrace();
+							}
 						}
 
 						/*

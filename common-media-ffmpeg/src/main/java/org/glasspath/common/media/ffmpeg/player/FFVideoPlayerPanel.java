@@ -54,7 +54,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 	public static boolean TODO_DEBUG = false;
 	public static int TODO_PRE_PROCESSOR_COUNT = 0;
-	public static int TODO_CONVERTED_COUNT = 0; // TODO: For now we do decoding and converting in one go to reduce memory usage
+	public static int TODO_CONVERTER_COUNT = 0; // TODO: For now we do decoding and converting in one go to reduce memory usage
 	public static int TODO_POST_PROCESSOR_COUNT = 0;
 
 	static {
@@ -159,6 +159,11 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		bufferIndex = 0;
 		decodeFailedCount = 0;
 
+	}
+
+	@Override
+	protected double getFrameRate() {
+		return frameRate;
 	}
 
 	@Override
@@ -405,7 +410,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		private int frameGrabberState = 0;
 
 		private FFFrameBuffer(Video video) {
-			super(1, TODO_PRE_PROCESSOR_COUNT, 0, TODO_POST_PROCESSOR_COUNT);
+			super(1, TODO_PRE_PROCESSOR_COUNT, TODO_CONVERTER_COUNT, TODO_POST_PROCESSOR_COUNT);
 
 			this.video = video;
 			this.frameConverter = new FFVideoFrameConverter();

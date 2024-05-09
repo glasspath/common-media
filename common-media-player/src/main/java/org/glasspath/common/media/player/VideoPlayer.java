@@ -268,6 +268,11 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	}
 
 	@Override
+	public void populateFileMenu(JMenu menu) {
+
+	}
+
+	@Override
 	public IVideoPlayerPanel getVideoPlayerPanel() {
 		return videoPlayerPanel;
 	}
@@ -288,7 +293,17 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	@Override
 	public void open(Video video) {
 		if (videoPlayerPanel != null) {
+			videoPlayerPanel.setOverlay(null); // TODO
 			videoPlayerPanel.open(video);
+		}
+	}
+
+	@Override
+	public Video getVideo() {
+		if (videoPlayerPanel != null) {
+			return videoPlayerPanel.getVideo();
+		} else {
+			return null;
 		}
 	}
 
@@ -370,6 +385,15 @@ public abstract class VideoPlayer implements IVideoPlayer, ILoopHandler {
 	@Override
 	public boolean isPlaying() {
 		return videoPlayerPanel != null && videoPlayerPanel.isPlaying();
+	}
+
+	@Override
+	public long getTimestamp() {
+		if (videoPlayerPanel != null) {
+			return videoPlayerPanel.getTimestamp();
+		} else {
+			return 0;
+		}
 	}
 
 	@Override

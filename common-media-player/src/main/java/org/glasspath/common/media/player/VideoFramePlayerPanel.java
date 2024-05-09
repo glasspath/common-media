@@ -122,11 +122,15 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 								frameCollected = false;
 
+								double frameRate = getFrameRate();
+								if (frameRate <= 0.0) {
+									frameRate = 30.0;
+								}
+
 								double speedFactor = 1.0 + (1.0 - (context.getRate() / 100.0));
 
-								// TODO: Use actual frame rate of video
 								// TODO: Calculate remaining time (subtract time needed for rendering frame)
-								int interval = (int) (33 * speedFactor);
+								int interval = (int) ((1000.0 / frameRate) * speedFactor);
 								if (interval > 0) {
 									Thread.sleep(interval);
 								}
@@ -193,6 +197,8 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 	}
 
+	protected abstract double getFrameRate();
+
 	protected abstract boolean isFrameAvailable();
 
 	protected abstract Frame getFrame();
@@ -258,6 +264,11 @@ public abstract class VideoFramePlayerPanel implements IVideoPlayerPanel {
 
 		this.video = video;
 
+	}
+
+	@Override
+	public Video getVideo() {
+		return video;
 	}
 
 	@Override

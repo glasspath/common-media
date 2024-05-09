@@ -22,6 +22,8 @@
  */
 package org.glasspath.common.media.player;
 
+import javax.swing.JMenu;
+
 import org.glasspath.common.media.player.IVideoPlayerListener.VideoPlayerStatistics;
 import org.glasspath.common.media.player.IVideoPlayerPanel.Loop;
 import org.glasspath.common.media.video.Video;
@@ -31,6 +33,8 @@ public interface IVideoPlayer extends FrameContext {
 
 	public static final boolean DEFAULT_PLAYBACK_STATE_PLAYING = true;
 
+	public void populateFileMenu(JMenu menu);
+
 	public IVideoPlayerPanel getVideoPlayerPanel();
 
 	public ControlsBar getControlsBar();
@@ -38,6 +42,8 @@ public interface IVideoPlayer extends FrameContext {
 	public void setOverlay(IOverlay overlay);
 
 	public void open(Video video);
+
+	public Video getVideo();
 
 	public void close();
 
@@ -62,6 +68,8 @@ public interface IVideoPlayer extends FrameContext {
 	public void fireVideoPlayerClosed();
 
 	public boolean isPlaying();
+
+	public long getTimestamp();
 
 	public ILoopHandler getLoopHandler();
 

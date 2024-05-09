@@ -78,6 +78,8 @@ public class FileTools extends AbstractTools<IVideoPlayer> {
 			}
 		});
 
+		context.populateFileMenu(menu);
+
 		menu.addSeparator();
 
 		JMenuItem exitMenuItem = new JMenuItem("Exit");

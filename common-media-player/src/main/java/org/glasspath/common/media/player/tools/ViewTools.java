@@ -71,7 +71,8 @@ public class ViewTools extends AbstractTools<IVideoPlayer> {
 	public static JCheckBoxMenuItem createShowOverlayMenuItem(IVideoPlayerPanel videoPlayerPanel, Preferences preferences) {
 
 		JCheckBoxMenuItem showOverlayMenuItem = new JCheckBoxMenuItem("Show overlay");
-		showOverlayMenuItem.setSelected(SHOW_OVERLAY_PREF.get(preferences));
+		showOverlayMenuItem.setSelected(SHOW_OVERLAY_PREF.get(preferences) && videoPlayerPanel.getOverlay() != null);
+		showOverlayMenuItem.setEnabled(videoPlayerPanel.getOverlay() != null);
 		showOverlayMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_9, OsUtils.CTRL_OR_CMD_MASK));
 		showOverlayMenuItem.addActionListener(new ActionListener() {
 
@@ -83,7 +84,7 @@ public class ViewTools extends AbstractTools<IVideoPlayer> {
 			}
 		});
 
-		// TODO: Listen for changes and update menu item
+		// TODO: Listen for changes and update menu item (opening of file does not yet update overlay)
 
 		return showOverlayMenuItem;
 

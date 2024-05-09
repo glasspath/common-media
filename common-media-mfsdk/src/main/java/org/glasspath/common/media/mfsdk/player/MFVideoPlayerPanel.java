@@ -299,6 +299,11 @@ public class MFVideoPlayerPanel extends EvrCanvasPanel implements IVideoPlayerPa
 	}
 
 	@Override
+	public Video getVideo() {
+		return video;
+	}
+
+	@Override
 	public void close() {
 		// TODO
 	}
