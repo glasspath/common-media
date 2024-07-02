@@ -29,11 +29,12 @@
 	<modules>
 		<module>common-media-core</module>
 		<module>common-media-rtsp</module>
+		<module>common-media-codec</module>
+		<module>common-media-recorder</module>
 		<module>common-media-player</module>
 		<module>common-media-mfsdk</module>
 		<module>common-media-ffmpeg</module>
-		<module>common-media-codec</module>
-		<module>common-media-recorder</module>
+		<module>common-media-opencv</module>
 	</modules>
 
 	<build>
