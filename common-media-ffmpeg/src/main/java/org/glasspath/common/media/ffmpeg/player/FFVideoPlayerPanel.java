@@ -31,11 +31,12 @@ import javax.imageio.stream.ImageOutputStream;
 import javax.swing.SwingUtilities;
 
 import org.bytedeco.javacv.FFmpegFrameFilter;
-import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FrameGrabber.Exception;
-import org.glasspath.common.media.ffmpeg.FFFrameLoader;
 import org.glasspath.common.media.ffmpeg.FFVideoFrameConverter;
 import org.glasspath.common.media.ffmpeg.FFmpegUtils;
+import org.glasspath.common.media.ffmpeg.IFFVideoFrameReader;
+import org.glasspath.common.media.ffmpeg.FFVideoFrameLoader;
+import org.glasspath.common.media.ffmpeg.FFmpegFactory;
 import org.glasspath.common.media.image.GifExporter;
 import org.glasspath.common.media.player.ExportRequest;
 import org.glasspath.common.media.player.IVideoPlayer;
@@ -285,7 +286,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 				@Override
 				public void run() {
 
-					FFFrameLoader frameLoader = new FFFrameLoader();
+					FFVideoFrameLoader frameLoader = new FFVideoFrameLoader();
 					frameLoader.open(new DefaultVideo(video.getName(), video.getPath()));
 
 					FrameLoaderCallback callback = new FrameLoaderCallback(0) {
@@ -406,7 +407,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		private final Video video;
 		private final FFVideoFrameConverter frameConverter;
 		private final FFmpegFrameFilter[] frameFilters;
-		private FFmpegFrameGrabber frameGrabber = null;
+		private IFFVideoFrameReader frameReader = null;
 		private int frameGrabberState = 0;
 
 		private FFFrameBuffer(Video video) {
@@ -435,11 +436,11 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 		@Override
 		protected boolean createDecoder(int thread) {
 
-			frameGrabber = new FFmpegFrameGrabber(video.getPath());
+			frameReader = FFmpegFactory.getInstance().createVideoFrameReader(video.getPath());
 			if (videoConfiguration == VideoConfiguration.FF_H264_CUVID) {
-				frameGrabber.setVideoCodecName("h264_cuvid");
+				frameReader.setVideoCodecName("h264_cuvid");
 			} else if (videoConfiguration == VideoConfiguration.FF_H264_QSV) {
-				frameGrabber.setVideoCodecName("h264_qsv");
+				frameReader.setVideoCodecName("h264_qsv");
 			}
 
 			// frameGrabber.setImageMode(ImageMode.RAW);
@@ -470,15 +471,15 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 			try {
 
-				frameGrabber.start();
+				frameReader.start();
 
 				context.fireVideoOpened(video.getPath());
 
-				duration = frameGrabber.getLengthInTime();
-				frameRate = frameGrabber.getFrameRate();
+				duration = frameReader.getLengthInTime();
+				frameRate = frameReader.getFrameRate();
 
 				if (TODO_DEBUG) {
-					System.out.println("FFVideoPlayerPanel, video codec: " + frameGrabber.getVideoCodecName());
+					System.out.println("FFVideoPlayerPanel, video codec: " + frameReader.getVideoCodecName());
 					System.out.println("FFVideoPlayerPanel, duration: " + duration);
 					System.out.println("FFVideoPlayerPanel, frameRate: " + frameRate);
 				}
@@ -517,14 +518,14 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 		@Override
 		protected long getDecoderTimestamp(int thread, org.bytedeco.javacv.Frame source) {
-			return frameGrabber.getTimestamp();
+			return frameReader.getTimestamp();
 		}
 
 		@Override
 		protected void setDecoderTimestamp(int thread, long timestamp) {
 			try {
-				frameGrabber.setVideoTimestamp(timestamp);
-			} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e) {
+				frameReader.setVideoTimestamp(timestamp);
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -534,7 +535,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 			try {
 
-				org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
+				org.bytedeco.javacv.Frame frame = frameReader.grabFrame(false, true, true, false);
 				if (frame != null && frame.image != null) {
 
 					if (getConverterThreads() == 0) {
@@ -555,7 +556,7 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 				}
 
-			} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
@@ -576,9 +577,9 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 		@Override
 		protected void closeDecoder(int thread) {
-			if (frameGrabber != null) {
+			if (frameReader != null) {
 				try {
-					frameGrabber.close();
+					frameReader.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -596,12 +597,12 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 				}
 			}
 
-			if (frameGrabber != null && thread >= 0 && thread < frameFilters.length) {
+			if (frameReader != null && thread >= 0 && thread < frameFilters.length) {
 
 				try {
 
-					frameFilters[thread] = new FFmpegFrameFilter(preProcessorFilter, frameGrabber.getImageWidth(), frameGrabber.getImageHeight());
-					frameFilters[thread].setPixelFormat(frameGrabber.getPixelFormat());
+					frameFilters[thread] = new FFmpegFrameFilter(preProcessorFilter, frameReader.getImageWidth(), frameReader.getImageHeight());
+					frameFilters[thread].setPixelFormat(frameReader.getPixelFormat());
 					frameFilters[thread].start();
 
 					return true;

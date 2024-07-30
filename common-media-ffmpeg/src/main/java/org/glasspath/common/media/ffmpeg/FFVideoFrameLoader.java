@@ -25,7 +25,6 @@ package org.glasspath.common.media.ffmpeg;
 import java.awt.image.BufferedImage;
 import java.util.Map;
 
-import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FrameGrabber.Exception;
 import org.glasspath.common.media.video.DefaultVideo;
 import org.glasspath.common.media.video.DefaultVideo.MetadataTimestamp;
@@ -33,7 +32,7 @@ import org.glasspath.common.media.video.Frame;
 import org.glasspath.common.media.video.FrameLoader;
 import org.glasspath.common.media.video.FrameLoaderCallback;
 
-public class FFFrameLoader extends FrameLoader {
+public class FFVideoFrameLoader extends FrameLoader {
 
 	public static boolean TODO_DEBUG = false;
 
@@ -42,11 +41,11 @@ public class FFFrameLoader extends FrameLoader {
 	}
 
 	private final FFVideoFrameConverter frameConverter;
-	private FFmpegFrameGrabber frameGrabber = null;
+	private IFFVideoFrameReader frameReader = null;
 	private boolean fileOpen = false;
 	private int maxSeekCount = -1;
 
-	public FFFrameLoader() {
+	public FFVideoFrameLoader() {
 		frameConverter = new FFVideoFrameConverter();
 	}
 
@@ -56,6 +55,9 @@ public class FFFrameLoader extends FrameLoader {
 
 	public void setMaxSeekCount(int maxSeekCount) {
 		this.maxSeekCount = maxSeekCount;
+		if (frameReader != null) {
+			frameReader.setMaxSeekCount(maxSeekCount);
+		}
 	}
 
 	protected int getThreads() {
@@ -72,39 +74,8 @@ public class FFFrameLoader extends FrameLoader {
 	public void open(DefaultVideo video, int width, int height, boolean closeFile) {
 		super.open(video, width, height, closeFile);
 
-		frameGrabber = new FFmpegFrameGrabber(video.getPath()) {
-
-			private int seekCount = 0;
-
-			@Override
-			public void setVideoTimestamp(long timestamp) throws Exception {
-				seekCount = 0;
-				super.setVideoTimestamp(timestamp);
-			}
-
-			@Override
-			public double getFrameRate() {
-
-				if (maxSeekCount >= 0) {
-
-					// TODO? This is a hack to trick FFmpegFrameGrabber,
-					// it uses getFrameRate() to calculate the frame duration,
-					// this way 'if (ts + frameDuration > timestamp)' will return immediately
-					// getFrameRate() is called 2 times before the while loop and 2 times
-					// in each iteration.
-					if (seekCount >= (maxSeekCount * 2) + 2) {
-						return 0.01;
-					} else {
-						seekCount++;
-						return super.getFrameRate();
-					}
-
-				} else {
-					return super.getFrameRate();
-				}
-
-			}
-		};
+		frameReader = FFmpegFactory.getInstance().createVideoFrameReader(video.getPath());
+		frameReader.setMaxSeekCount(maxSeekCount);
 		// frameGrabber.setImageScalingFlags(org.bytedeco.ffmpeg.global.swscale.SWS_FAST_BILINEAR);
 		// frameGrabber.setImageMode(ImageMode.GRAY);
 		// frameGrabber.setVideoCodecName("h264_qsv");
@@ -113,29 +84,29 @@ public class FFFrameLoader extends FrameLoader {
 		// frameGrabber.setVideoOption("tune", "fastdecode+zerolatency");
 
 		if (width > 0 && height > 0) {
-			frameGrabber.setImageWidth(width);
-			frameGrabber.setImageHeight(height);
+			frameReader.setImageWidth(width);
+			frameReader.setImageHeight(height);
 		}
 
-		frameGrabber.setVideoOption("threads", "" + getThreads());
+		frameReader.setVideoOption("threads", "" + getThreads());
 
 		try {
 
-			frameGrabber.start();
+			frameReader.start();
 
-			video.setDuration(frameGrabber.getLengthInTime() / 1000L); // TODO
-			video.setFrameRate(frameGrabber.getFrameRate());
+			video.setDuration(frameReader.getLengthInTime() / 1000L); // TODO
+			video.setFrameRate(frameReader.getFrameRate());
 
 			Map<String, String> metadata;
 
-			metadata = frameGrabber.getMetadata();
+			metadata = frameReader.getMetadata();
 			if (TODO_DEBUG) {
 				System.out.println("General Metdata:");
 				printMetadata(metadata);
 			}
 			parseMetadata(metadata);
 
-			metadata = frameGrabber.getVideoMetadata();
+			metadata = frameReader.getVideoMetadata();
 			if (TODO_DEBUG) {
 				System.out.println("Video Metdata:");
 				printMetadata(metadata);
@@ -187,18 +158,18 @@ public class FFFrameLoader extends FrameLoader {
 
 			try {
 
-				frameGrabber.setImageWidth(width);
-				frameGrabber.setImageHeight(height);
+				frameReader.setImageWidth(width);
+				frameReader.setImageHeight(height);
 
 				timestamp -= (video.getTimestamp() + video.getStartTimeCorrectionOffset()); // Video starts at 0
 
 				if (timestamp >= 0 && timestamp <= video.getDuration()) {
 
-					frameGrabber.setVideoTimestamp(timestamp * 1000);
+					frameReader.setVideoTimestamp(timestamp * 1000);
 
 					while (!callback.isCanceled()) { // TODO?
 
-						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
+						org.bytedeco.javacv.Frame frame = frameReader.grabFrame(false, true, true, false);
 
 						if (frame == null) {
 							break;
@@ -232,18 +203,18 @@ public class FFFrameLoader extends FrameLoader {
 
 			try {
 
-				frameGrabber.setImageWidth(width);
-				frameGrabber.setImageHeight(height);
+				frameReader.setImageWidth(width);
+				frameReader.setImageHeight(height);
 
 				timestamp -= (video.getTimestamp() + video.getStartTimeCorrectionOffset()); // Video starts at 0
 
 				if (timestamp >= 0 && timestamp <= video.getDuration()) {
 
-					frameGrabber.setVideoTimestamp(timestamp * 1000);
+					frameReader.setVideoTimestamp(timestamp * 1000);
 
 					while (!callback.isCanceled()) { // TODO?
 
-						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
+						org.bytedeco.javacv.Frame frame = frameReader.grabFrame(false, true, true, false);
 
 						if (frame == null) {
 							break;
@@ -290,7 +261,7 @@ public class FFFrameLoader extends FrameLoader {
 
 				if (fromTimestamp < toTimestamp && fromTimestamp < video.getDuration()) {
 
-					frameGrabber.setImageHeight(frameHeight);
+					frameReader.setImageHeight(frameHeight);
 
 					int frameWidth;
 					if (video.getHeight() != 0 && video.getWidth() != 0) {
@@ -298,7 +269,7 @@ public class FFFrameLoader extends FrameLoader {
 					} else {
 						frameWidth = (frameHeight * 16) / 9; // Use most common aspect ratio if we don't know the video resolution
 					}
-					frameGrabber.setImageWidth(frameWidth);
+					frameReader.setImageWidth(frameWidth);
 
 					double count = (double) totalWidth / (double) (frameWidth + frameSpacing);
 					if (count > 0) {
@@ -313,8 +284,8 @@ public class FFFrameLoader extends FrameLoader {
 								System.out.println("Grabbing frame for video: " + video.getName() + " at: " + timestamp);
 							}
 
-							frameGrabber.setVideoTimestamp(timestamp * 1000);
-							org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
+							frameReader.setVideoTimestamp(timestamp * 1000);
+							org.bytedeco.javacv.Frame frame = frameReader.grabFrame(false, true, true, false);
 							// org.bytedeco.javacv.Frame frame = grabFrame(frameGrabber, timestamp, keyFrameMode);
 
 							if (frame == null) {
@@ -336,10 +307,10 @@ public class FFFrameLoader extends FrameLoader {
 
 											timestamp += 25;
 
-											frameGrabber.setVideoTimestamp(timestamp * 1000);
-											frame = frameGrabber.grabFrame(false, true, false, false);
+											frameReader.setVideoTimestamp(timestamp * 1000);
+											frame = frameReader.grabFrame(false, true, false, false);
 											if (frame != null) {
-												frame = frameGrabber.grabFrame(false, true, true, false);
+												frame = frameReader.grabFrame(false, true, true, false);
 												if (frame != null) {
 													if (TODO_DEBUG) {
 														System.err.println("Retry succeeded for video: " + video.getName() + " at: " + timestamp);
@@ -403,8 +374,8 @@ public class FFFrameLoader extends FrameLoader {
 
 				if (fromTimestamp < video.getDuration()) {
 
-					frameGrabber.setImageWidth(width);
-					frameGrabber.setImageHeight(height);
+					frameReader.setImageWidth(width);
+					frameReader.setImageHeight(height);
 
 					long timestamp = fromTimestamp;
 					long toTimestamp = from + (interval * count);
@@ -414,8 +385,8 @@ public class FFFrameLoader extends FrameLoader {
 							System.out.println("Grabbing frame for video: " + video.getName() + " at: " + timestamp);
 						}
 
-						frameGrabber.setVideoTimestamp(timestamp * 1000);
-						org.bytedeco.javacv.Frame frame = frameGrabber.grabFrame(false, true, true, false);
+						frameReader.setVideoTimestamp(timestamp * 1000);
+						org.bytedeco.javacv.Frame frame = frameReader.grabFrame(false, true, true, false);
 						// org.bytedeco.javacv.Frame frame = grabFrame(frameGrabber, timestamp, keyFrameMode);
 
 						if (frame != null && frame.image != null) {
@@ -454,9 +425,9 @@ public class FFFrameLoader extends FrameLoader {
 
 			fileOpen = false;
 
-			if (frameGrabber != null) {
-				frameGrabber.close();
-				frameGrabber = null;
+			if (frameReader != null) {
+				frameReader.close();
+				frameReader = null;
 			}
 
 		} catch (Exception e) {

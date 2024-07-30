@@ -56,7 +56,7 @@ public class FFmpegUtils {
 	public static boolean TODO_DEBUG = false;
 
 	public static final int MIN_TRANSCODED_FILE_LENGTH = 100; // TODO: Checking for length > 0 also worked, what is the minimal file size we expect?
-	
+
 	private FFmpegUtils() {
 
 	}
