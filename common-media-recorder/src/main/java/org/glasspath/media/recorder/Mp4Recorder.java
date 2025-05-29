@@ -87,14 +87,18 @@ public abstract class Mp4Recorder extends H264NalUnitRecorder<Mp4Recording> {
 	@Override
 	protected boolean writeNalUnit(H264NalUnit nalUnit, long pts, long duration) {
 
-		if (recording.isReady()) {
+		if (recording != null && recording.isReady()) {
 
 			try {
 
 				Packet frame = nextFrame(nalUnit, pts, duration, recording.frameCount);
 				if (frame != null) {
+
 					recording.addFrame(frame);
 					recording.ptsEnd = frame.pts + frame.duration;
+
+					return true;
+
 				}
 
 			} catch (Exception e) {

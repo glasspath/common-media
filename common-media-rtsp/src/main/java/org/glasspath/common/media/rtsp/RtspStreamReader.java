@@ -444,7 +444,7 @@ public abstract class RtspStreamReader {
 				case WAIT_FOR_SECOND_HEADER_BYTE:
 					rtpHeaderByteReader.setCurrentByte(b);
 					secondRtpHeaderByte.parse(rtpHeaderByteReader);
-					if (secondRtpHeaderByte.payloadType == RtpPacket.PayloadType.TODO_DEFAULT.getTypeValue()) {
+					if (secondRtpHeaderByte.payloadType == RtpPacket.PayloadType.DYNAMIC_COMMON_H264.getTypeValue()) {
 						rtpParserState = RtpParserState.WAIT_FOR_SEQUENCE_NUMBER;
 					} else {
 						if (TODO_DEBUG) {
@@ -475,11 +475,12 @@ public abstract class RtspStreamReader {
 				case WAIT_FOR_END_OF_PACKET:
 					if (messageIndex >= rtspFrameStartIndex + RtspInterleavedFrame.HEADER_LENGTH + rtspFrame.getLength()) {
 
-						if (secondRtpHeaderByte.payloadType == RtpPacket.PayloadType.TODO_DEFAULT.getTypeValue()) {
+						// TODO: We are checking for commonly defined payload types, but we should get this from the SDP info we received when setting up the RTSP stream
+						if (secondRtpHeaderByte.payloadType == RtpPacket.PayloadType.DYNAMIC_COMMON_H264.getTypeValue() || secondRtpHeaderByte.payloadType == RtpPacket.PayloadType.DYNAMIC_COMMON_AAC.getTypeValue()) {
 
 							int from = rtspFrameStartIndex + RtspInterleavedFrame.HEADER_LENGTH;
 							int to = from + rtspFrame.getLength();
-							rtspFrame.getRtpPacket().parseBytes(Arrays.copyOfRange(messageBuffer, from, to));
+							rtspFrame.getRtpPacket().parseBytes(Arrays.copyOfRange(messageBuffer, from, to)); // TODO: Are we parsing audio correctly? (expects video by default..)
 
 							rtspInterleavedFrameReceived(rtspFrame);
 							rtpPacketReceived(rtspFrame.getRtpPacket());

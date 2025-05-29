@@ -1,6 +1,6 @@
 /*
  * This file is part of Glasspath Common.
- * Copyright (C) 2011 - 2023 Remco Poelstra
+ * Copyright (C) 2011 - 2025 Remco Poelstra
  * Authors: Remco Poelstra
  * 
  * This program is offered under a commercial and under the AGPL license.
@@ -22,14 +22,10 @@
  */
 package org.glasspath.common.media.rtsp;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
 import org.glasspath.common.media.h264.H264NalUnit;
 
-public class H264AnnexBWriter {
+public abstract class H264AnnexBWriter extends AccessUnitWriter {
 
-	private OutputStream outputStream = null;
 	private int nalUnitType = 0;
 	private long timestamp = 0;
 
@@ -37,14 +33,7 @@ public class H264AnnexBWriter {
 
 	}
 
-	public OutputStream getOutputStream() {
-		return outputStream;
-	}
-
-	public void setOutputStream(OutputStream outputStream) {
-		this.outputStream = outputStream;
-	}
-
+	@Override
 	public void rtpPacketReceived(RtpPacket rtpPacket) {
 
 		switch (rtpPacket.getNalFragmentType()) {
@@ -57,7 +46,7 @@ public class H264AnnexBWriter {
 			write(H264NalUnit.NAL_START_PREFIX_CODE);
 			write(rtpPacket.getBytes(), rtpPacket.getHeaderLength(), rtpPacket.getBytes().length - rtpPacket.getHeaderLength());
 
-			nalUnitWritten(nalUnitType, timestamp);
+			accessUnitWritten(nalUnitType, timestamp);
 
 			break;
 
@@ -76,7 +65,7 @@ public class H264AnnexBWriter {
 			write(rtpPacket.getBytes(), rtpPacket.getHeaderLength() + 2, rtpPacket.getBytes().length - (rtpPacket.getHeaderLength() + 2));
 
 			if (rtpPacket.isEnd()) {
-				nalUnitWritten(nalUnitType, timestamp);
+				accessUnitWritten(nalUnitType, timestamp);
 			}
 
 			break;
@@ -87,44 +76,10 @@ public class H264AnnexBWriter {
 		*/
 
 		default:
-			System.err.println("NAL: Unimplemented unit type: " + rtpPacket.getNalFragmentType());
+			System.err.println("H264AnnexBWriter: Unimplemented unit type: " + rtpPacket.getNalFragmentType());
 			break;
 
 		}
-
-	}
-
-	private void write(byte b) {
-		if (outputStream != null) {
-			try {
-				outputStream.write(b);
-			} catch (IOException e) {
-				e.printStackTrace(); // TODO
-			}
-		}
-	}
-
-	private void write(byte[] bytes) {
-		if (outputStream != null) {
-			try {
-				outputStream.write(bytes);
-			} catch (IOException e) {
-				e.printStackTrace(); // TODO
-			}
-		}
-	}
-
-	private void write(byte[] bytes, int offset, int length) {
-		if (outputStream != null) {
-			try {
-				outputStream.write(bytes, offset, length);
-			} catch (IOException e) {
-				e.printStackTrace(); // TODO
-			}
-		}
-	}
-
-	public void nalUnitWritten(int nalUnitType, long timestamp) {
 
 	}
 

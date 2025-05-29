@@ -269,6 +269,12 @@ public abstract class FFH264NalUnitDecoderThread {
 
 	public abstract void statisticsUpdated(VideoPlayerStatistics statistics);
 
+	// TODO: Decoder can be closed and recreated in this thread (releases native resources), frame can be converted to BufferedImage later on EDT..
+	public boolean isFrameValid(Frame frame) {
+		FFH264NalUnitDecoder decoder = this.decoder;
+		return !exit && decoder != null && frame == decoder.getFrame();
+	}
+
 	public void exit() {
 		exit = true;
 	}

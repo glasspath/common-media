@@ -156,10 +156,11 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 
 					@Override
 					public void run() {
-
-						previewFrame.setImage(converter.createBufferedImage(frame, previewFrame.getImage()));
-						repaint();
-
+						// TODO: Decoder can be closed and recreated in this thread (releases native resources), frame can be converted to BufferedImage later on EDT..
+						if (decoderThread.isFrameValid(frame)) {
+							previewFrame.setImage(converter.createBufferedImage(frame, previewFrame.getImage()));
+							repaint();
+						}
 					}
 				});
 
@@ -194,7 +195,7 @@ public abstract class FFVideoPreviewPanel extends FramePanel implements IVideoPr
 	}
 
 	@Override
-	public void populateViewMenu(JMenu menu, JMenuItem overlayMenuItem) {
+	public void populateViewMenu(JMenu menu, JMenuItem overlayMenuItem, boolean contextMenu) {
 
 		menu.add(createZoomMenu());
 		menu.add(createRotateMenu());

@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.glasspath.common.media.video.Resolution;
+import org.jcodec.common.AudioFormat;
 import org.jcodec.common.Codec;
 import org.jcodec.common.MuxerTrack;
 import org.jcodec.common.VideoCodecMeta;
@@ -39,9 +40,12 @@ import org.jcodec.containers.mp4.Brand;
 
 public class Mp4Recording extends Recording {
 
+	// TODO
+	public static boolean TODO_TEST_AUDIO = false;
+
 	private SeekableByteChannel sink = null;
 	private Mp4Muxer muxer = null;
-	private MuxerTrack videoTrack = null;
+	private MuxerTrack muxerTrack = null;
 
 	public Mp4Recording(String path, Resolution resolution, long created, int timeScale) {
 		super(path, created, timeScale);
@@ -52,10 +56,27 @@ public class Mp4Recording extends Recording {
 			muxer = Mp4Muxer.createMp4Muxer(sink, Brand.MP4);
 			muxer.setCreated(created);
 
-			// TODO: Support more ColorSpaces?
-			VideoCodecMeta videoCodecMeta = VideoCodecMeta.createSimpleVideoCodecMeta(new Size(resolution.getWidth(), resolution.getHeight()), ColorSpace.YUV420);
+			if (TODO_TEST_AUDIO) {
 
-			videoTrack = muxer.addVideoTrack(Codec.H264, videoCodecMeta);
+				// TODO: Temporary test for audio recorded from Axis camera
+				int sampleRate = 8000;
+				int sampleSizeInBits = 16;
+				int channels = 1;
+				boolean signed = true;
+				boolean bigEndian = false;
+
+				AudioFormat audioFormat = new AudioFormat(sampleRate, sampleSizeInBits, channels, signed, bigEndian);
+
+				muxerTrack = muxer.addCompressedAudioTrack(Codec.AAC, audioFormat);
+
+			} else {
+
+				// TODO: Support more ColorSpaces?
+				VideoCodecMeta videoCodecMeta = VideoCodecMeta.createSimpleVideoCodecMeta(new Size(resolution.getWidth(), resolution.getHeight()), ColorSpace.YUV420);
+
+				muxerTrack = muxer.addVideoTrack(Codec.H264, videoCodecMeta);
+
+			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -64,12 +85,12 @@ public class Mp4Recording extends Recording {
 	}
 
 	public boolean isReady() {
-		return videoTrack != null;
+		return muxerTrack != null;
 	}
 
 	public void addFrame(Packet frame) throws IOException {
 
-		videoTrack.addFrame(frame);
+		muxerTrack.addFrame(frame);
 
 		frameCount++;
 		bytesWritten += frame.data.limit();
@@ -112,7 +133,7 @@ public class Mp4Recording extends Recording {
 			result = false;
 		}
 
-		videoTrack = null;
+		muxerTrack = null;
 		muxer = null;
 		sink = null;
 

@@ -1,6 +1,6 @@
 /*
  * This file is part of Glasspath Common.
- * Copyright (C) 2011 - 2023 Remco Poelstra
+ * Copyright (C) 2011 - 2025 Remco Poelstra
  * Authors: Remco Poelstra
  * 
  * This program is offered under a commercial and under the AGPL license.
@@ -22,7 +22,9 @@
  */
 package org.glasspath.common.media.h264;
 
-public class H264NalUnit {
+import org.glasspath.common.media.AccessUnit;
+
+public class H264NalUnit extends AccessUnit {
 
 	public static final byte[] NAL_START_PREFIX_CODE = {
 			(byte) 0x00,
@@ -93,14 +95,11 @@ public class H264NalUnit {
 
 	public final byte[] bytes;
 	public final int nalUnitType;
-	public final long timestamp;
-	public final long receivedAt;
 
 	public H264NalUnit(byte[] bytes, int nalUnitType, long timestamp, long receivedAt) {
+		super(timestamp, receivedAt);
 		this.bytes = bytes;
 		this.nalUnitType = nalUnitType;
-		this.timestamp = timestamp;
-		this.receivedAt = receivedAt;
 	}
 
 	public boolean isFrame() {

@@ -31,7 +31,7 @@ import org.glasspath.common.media.video.Resolution;
 public abstract class H264NalUnitRecorder<T extends Recording> {
 
 	public static enum PtsMode {
-		FIXED_FRAME_RATE,
+		FIXED_FRAME_INTERVAL,
 		NAL_UNIT_TIMESTAMPS_CORRECTED,
 		NAL_UNIT_TIMESTAMPS_NOT_CORRECTED
 	}
@@ -40,13 +40,12 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 
 	private String name = "H264NalUnitRecorder";
 	private int timeScale = 100000;
-	private PtsMode ptsMode = PtsMode.FIXED_FRAME_RATE;
-	private double fixedFrameRate = 30.0;
+	private PtsMode ptsMode = PtsMode.FIXED_FRAME_INTERVAL;
+	private long fixedFrameInterval = 3333L;
 	private long ptsOffset = 0L;
 	private String path = null;
 	private boolean recordingStarted = false;
 	private H264NalUnit nalUnit = null;
-	private long fixedFrameRateDuration = 3333L;
 	private long ptsCorrection = 0L;
 	private long pts = 0L;
 	private long duration = 0L;
@@ -69,7 +68,6 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 
 	public void setTimeScale(int timeScale) {
 		this.timeScale = timeScale;
-		updateFixedFrameRateDuration();
 	}
 
 	public PtsMode getPtsMode() {
@@ -80,13 +78,12 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 		this.ptsMode = ptsMode;
 	}
 
-	public double getFixedFrameRate() {
-		return fixedFrameRate;
+	public long getFixedFrameInterval() {
+		return fixedFrameInterval;
 	}
 
-	public void setFixedFrameRate(double fixedFrameRate) {
-		this.fixedFrameRate = fixedFrameRate;
-		updateFixedFrameRateDuration();
+	public void setFixedFrameInterval(long fixedFrameInterval) {
+		this.fixedFrameInterval = fixedFrameInterval;
 	}
 
 	public long getPtsOffset() {
@@ -99,12 +96,6 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 
 	public String getPath() {
 		return path;
-	}
-
-	private void updateFixedFrameRateDuration() {
-		if (fixedFrameRate > 0) {
-			fixedFrameRateDuration = (long) (timeScale / fixedFrameRate);
-		}
 	}
 
 	protected abstract Resolution getResolution();
@@ -137,7 +128,9 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 
 	protected abstract void recordingClosed(String filePath);
 
-	public void writeNalUnits(List<H264NalUnit> nalUnits, H264ParameterSets parameterSets) {
+	public boolean writeNalUnits(List<H264NalUnit> nalUnits, H264ParameterSets parameterSets) {
+
+		boolean result = true;
 
 		if (nalUnits != null && nalUnits.size() > 0 && parameterSets != null && parameterSets.sequenceParameterSet != null && parameterSets.pictureParameterSet != null) {
 
@@ -156,7 +149,7 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 								path = getNextRecordingPath(nalUnit.receivedAt);
 								if (path != null) {
 
-									if (ptsMode == PtsMode.FIXED_FRAME_RATE) {
+									if (ptsMode == PtsMode.FIXED_FRAME_INTERVAL) {
 										ptsCorrection = 0;
 										pts = ptsOffset;
 									} else if (ptsMode == PtsMode.NAL_UNIT_TIMESTAMPS_CORRECTED) {
@@ -177,6 +170,7 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 										if (TODO_DEBUG) {
 											System.err.println(name + " recording not created");
 										}
+										result = false;
 										break;
 									}
 
@@ -184,6 +178,7 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 									if (TODO_DEBUG) {
 										System.err.println(name + " getNextRecordingPath() returned null");
 									}
+									result = false;
 									break;
 								}
 
@@ -193,7 +188,9 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 
 						if (recordingStarted) {
 
-							writeNalUnit(nalUnit, nextNalUnit);
+							if (!writeNalUnit(nalUnit, nextNalUnit)) {
+								result = false;
+							}
 
 							if (nextNalUnit.isIFrame()) {
 
@@ -250,38 +247,46 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 
 		}
 
+		return result;
+
 	}
 
-	private void writeNalUnit(H264NalUnit nalUnit, H264NalUnit nextNalUnit) {
+	private boolean writeNalUnit(H264NalUnit nalUnit, H264NalUnit nextNalUnit) {
 
-		if (ptsMode != PtsMode.FIXED_FRAME_RATE) {
+		if (ptsMode != PtsMode.FIXED_FRAME_INTERVAL) {
 			pts = (nalUnit.timestamp - ptsCorrection) + ptsOffset;
 		}
 
-		if (ptsMode == PtsMode.FIXED_FRAME_RATE) {
-			duration = fixedFrameRateDuration;
+		if (ptsMode == PtsMode.FIXED_FRAME_INTERVAL) {
+			duration = fixedFrameInterval;
 		} else {
 			duration = nextNalUnit.timestamp - nalUnit.timestamp;
 		}
 
-		writeNalUnit(nalUnit, pts, duration);
+		boolean result = writeNalUnit(nalUnit, pts, duration);
 
-		if (ptsMode == PtsMode.FIXED_FRAME_RATE) {
-			pts += fixedFrameRateDuration;
+		if (ptsMode == PtsMode.FIXED_FRAME_INTERVAL) {
+			pts += fixedFrameInterval;
 		}
 
+		return result;
+
 	}
 
-	public void close() {
-		close(true);
+	public boolean close() {
+		return close(true);
 	}
 
-	protected void close(boolean writeLastNalUnit) {
+	protected boolean close(boolean writeLastNalUnit) {
+
+		boolean result = true;
 
 		if (nalUnit != null && writeLastNalUnit) {
 
 			// We don't have a next nal-unit here, so pass the same nal-unit as next nal-unit
-			writeNalUnit(nalUnit, nalUnit);
+			if (!writeNalUnit(nalUnit, nalUnit)) {
+				result = false;
+			}
 
 			nalUnit = null;
 
@@ -291,14 +296,19 @@ public abstract class H264NalUnitRecorder<T extends Recording> {
 
 		if (closeRecording(getRecording())) {
 			recordingClosed(path);
-		} else if (TODO_DEBUG) {
-			System.out.println(name + " warning, recording not closed");
+		} else {
+			if (TODO_DEBUG) {
+				System.out.println(name + " warning, recording not closed");
+			}
+			result = false;
 		}
 
 		path = null;
 		recordingStarted = false;
 		ptsCorrection = 0L;
 		pts = 0L;
+
+		return result;
 
 	}
 

@@ -170,7 +170,7 @@ public abstract class MFVideoPreviewPanel extends EvrCanvasPanel implements IVid
 	}
 
 	@Override
-	public void populateViewMenu(JMenu menu, JMenuItem overlayMenuItem) {
+	public void populateViewMenu(JMenu menu, JMenuItem overlayMenuItem, boolean contextMenu) {
 
 		menu.add(createZoomMenu());
 		menu.addSeparator();

@@ -386,6 +386,10 @@ public class RtspClient {
 	}
 
 	public int sendSetupRequest() {
+		return sendSetupRequest(false);
+	}
+
+	public int sendSetupRequest(boolean audio) {
 
 		String t;
 
@@ -400,7 +404,11 @@ public class RtspClient {
 			break;
 		}
 
-		return sendSetupRequest(videoTrackInfo, t);
+		if (audio) {
+			return sendSetupRequest(audioTrackInfo, t);
+		} else {
+			return sendSetupRequest(videoTrackInfo, t);
+		}
 
 	}
 

@@ -24,7 +24,6 @@ package org.glasspath.common.media.rtsp;
 
 import java.nio.ByteBuffer;
 
-import org.glasspath.common.media.h264.H264NalUnit;
 import org.glasspath.common.media.h264.H264NalUnit.NalFragmentType;
 
 public class RtpPacket {
@@ -33,7 +32,8 @@ public class RtpPacket {
 
 		UNKNOWN(-1),
 		// TODO
-		TODO_DEFAULT(96)
+		DYNAMIC_COMMON_H264(96),
+		DYNAMIC_COMMON_AAC(97)
 		// TODO
 		;
 
@@ -63,6 +63,7 @@ public class RtpPacket {
 	private int extentionLength = 0;
 	private int headerLength = DEFAULT_HEADER_LENGTH;
 
+	// TODO: These fields are specific to H264 video, move to sub-class?
 	private byte nalFBits;
 	private byte nalNriBits;
 	private byte nalType;
@@ -107,6 +108,7 @@ public class RtpPacket {
 				headerLength += 4 * firstRtpHeaderByte.csrcCount;
 			}
 
+			// TODO: These fields are specific to H264 video, move to sub-class?
 			byte nalUnitOctet = byteBuffer.get();
 			nalFBits = (byte) (nalUnitOctet & 0x80);
 			nalNriBits = (byte) (nalUnitOctet & 0x60);
@@ -144,6 +146,7 @@ public class RtpPacket {
 
 	}
 
+	/*
 	public static byte[] parseNalUnit(H264NalUnit nalUnit) {
 
 		byte[] bytes = new byte[(nalUnit.bytes.length - 4) + 12];
@@ -152,7 +155,7 @@ public class RtpPacket {
 
 		// fill the header array of byte with RTP header fields
 		bytes[0] = (byte) (VERSION << 6 | padding << 5 | extension << 4 | cc);
-		bytes[1] = (byte) (marker << 7 | PayloadType.TODO_DEFAULT.typeValue & 0x000000FF);
+		bytes[1] = (byte) (marker << 7 | PayloadType.DYNAMIC_COMMON_H264.typeValue & 0x000000FF);
 		bytes[2] = (byte) (sequenceNumber >> 8);
 		bytes[3] = (byte) (sequenceNumber & 0xFF);
 		bytes[4] = (byte) (nalUnit.timestamp >> 24);
@@ -169,6 +172,7 @@ public class RtpPacket {
 		return bytes;
 
 	}
+	 */
 
 	public byte[] getBytes() {
 		return bytes;

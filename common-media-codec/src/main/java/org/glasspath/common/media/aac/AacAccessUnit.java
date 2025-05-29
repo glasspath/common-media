@@ -1,6 +1,6 @@
 /*
  * This file is part of Glasspath Common.
- * Copyright (C) 2011 - 2023 Remco Poelstra
+ * Copyright (C) 2011 - 2025 Remco Poelstra
  * Authors: Remco Poelstra
  * 
  * This program is offered under a commercial and under the AGPL license.
@@ -20,41 +20,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package org.glasspath.common.media.player;
+package org.glasspath.common.media.aac;
 
-import javax.swing.JComponent;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
+import org.glasspath.common.media.AccessUnit;
 
-public interface IVideoPreviewPanel {
+public class AacAccessUnit extends AccessUnit {
 
-	public static enum PlayerState {
-		PLAYER_STOPPED,
-		PLAYER_STARTING,
-		PLAYER_STARTED,
-		PLAYER_STOPPING
+	public final byte[] bytes;
+
+	public AacAccessUnit(byte[] bytes, long timestamp, long receivedAt) {
+		super(timestamp, receivedAt);
+		this.bytes = bytes;
 	}
-
-	public JComponent getComponent();
-
-	public void populateViewMenu(JMenu menu, JMenuItem overlayMenuItem, boolean contextMenu);
-
-	public int getDefaultCursor();
-
-	public void setDefaultCursor(int defaultCursor);
-
-	public IOverlay getOverlay();
-
-	public void setOverlay(IOverlay overlay);
-
-	public boolean isPreviewEnabled();
-
-	public void setPreviewEnabled(boolean previewEnabled);
-
-	public void start();
-
-	public void setSelected(boolean selected);
-
-	public void close();
 
 }
