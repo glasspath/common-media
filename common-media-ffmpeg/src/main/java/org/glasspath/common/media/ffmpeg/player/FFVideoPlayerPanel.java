@@ -473,39 +473,43 @@ public class FFVideoPlayerPanel extends VideoFramePlayerPanel {
 
 				frameReader.start();
 
-				context.fireVideoOpened(video.getPath());
+				if (frameReader.hasVideo()) {
 
-				duration = frameReader.getLengthInTime();
-				frameRate = frameReader.getFrameRate();
+					context.fireVideoOpened(video.getPath());
 
-				if (TODO_DEBUG) {
-					System.out.println("FFVideoPlayerPanel, video codec: " + frameReader.getVideoCodecName());
-					System.out.println("FFVideoPlayerPanel, duration: " + duration);
-					System.out.println("FFVideoPlayerPanel, frameRate: " + frameRate);
+					duration = frameReader.getLengthInTime();
+					frameRate = frameReader.getFrameRate();
+
+					if (TODO_DEBUG) {
+						System.out.println("FFVideoPlayerPanel, video codec: " + frameReader.getVideoCodecName());
+						System.out.println("FFVideoPlayerPanel, duration: " + duration);
+						System.out.println("FFVideoPlayerPanel, frameRate: " + frameRate);
+					}
+
+					if (frameRate > 1) {
+						interval = (int) (1000 / frameRate) - 1; // TODO: Added -1 as a test to get closer to the desired fps
+					} else {
+						interval = -1;
+					}
+
+					/*
+					final double scale = (getWidth() - 30) / 1280.0;
+					final int width = (int)(1280 * scale);
+					final int height = (int)(720 * scale);
+
+					frameGrabber.setImageWidth(width);
+					frameGrabber.setImageHeight(height);
+					 */
+
+					if (interval > 0) {
+						frameGrabberState = 1;
+					} else {
+						frameGrabberState = -1;
+					}
+
+					return frameGrabberState == 1;
+
 				}
-
-				if (frameRate > 1) {
-					interval = (int) (1000 / frameRate) - 1; // TODO: Added -1 as a test to get closer to the desired fps
-				} else {
-					interval = -1;
-				}
-
-				/*
-				final double scale = (getWidth() - 30) / 1280.0;
-				final int width = (int)(1280 * scale);
-				final int height = (int)(720 * scale);
-				
-				frameGrabber.setImageWidth(width);
-				frameGrabber.setImageHeight(height);
-				 */
-
-				if (interval > 0) {
-					frameGrabberState = 1;
-				} else {
-					frameGrabberState = -1;
-				}
-
-				return frameGrabberState == 1;
 
 			} catch (Exception e) {
 				e.printStackTrace();

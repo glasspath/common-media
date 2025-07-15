@@ -31,6 +31,10 @@ public interface IFFVideoFrameReader {
 
 	public void start() throws FrameGrabber.Exception;
 
+	public boolean hasVideo();
+
+	public boolean hasAudio();
+
 	public String getVideoCodecName();
 
 	public void setVideoCodecName(String videoCodecName);

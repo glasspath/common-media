@@ -122,6 +122,14 @@ public class FFVideoFrameLoader extends FrameLoader {
 
 	}
 
+	public boolean isVideoAvailable() {
+		return frameReader != null && frameReader.hasVideo();
+	}
+
+	public boolean isAudioAvailable() {
+		return frameReader != null && frameReader.hasAudio();
+	}
+
 	@Override
 	public boolean isFileOpen() {
 		return fileOpen;
@@ -439,17 +447,17 @@ public class FFVideoFrameLoader extends FrameLoader {
 	// TODO
 	/*
 	public static synchronized org.bytedeco.javacv.Frame grabFrame(FFmpegFrameGrabber frameGrabber, long timestamp, boolean keyFrameMode) {
-	
+
 		try {
 			frameGrabber.setVideoTimestamp(timestamp * 1000);
 			return frameGrabber.grabFrame(false, true, true, keyFrameMode);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	
+
 		return null;
-	
+
 	}
-	*/
+	 */
 
 }
